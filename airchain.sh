@@ -269,13 +269,6 @@ sudo journalctl --vacuum-time=1s
 function main_menu() {
     while true; do
         clear
-        echo "转载大赌哥的，小改适配自己的本地方式，如有侵权，请联系删除，免费开源，请勿相信收费"
-        echo "特别鸣谢 @TestnetCn @y95277777 @EthExploring"
-        echo "================================================================"
-        echo "节点社区 Telegram 群组:https://t.me/niuwuriji"
-        echo "节点社区 Telegram 频道:https://t.me/niuwuriji"
-        echo "节点社区 Discord 社群:https://discord.gg/GbMV5EcNWF"
-        echo "退出脚本，请按键盘ctrl c退出即可"
         echo "请选择要执行的操作:"
         echo "1. 安装节点"
         echo "2. 查看wasmstationd状态"
