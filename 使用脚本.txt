@@ -1,0 +1,12 @@
+wget -0airchainrollup.sh https://raw.githubusercontent.com/candy1264/airchains/main/airchainrollup.sh && chmod +xairchainrollup.sh && ,/airchainrollup.sh 
+
+wget -O airchain.shhttps:/raw.githubusercontent.com/candy1264/airchains/main/airchain.sh&& chmod +x airchain.sh && ./airchain.sh
+
+
+
+wget -O airchain.sh https://raw.githubusercontent.com/TianMenLong/testsh/main/airchain.sh && chmod +x airchain.sh && ./airchain.sh
+
+wget -O airchainrollup.sh https://raw.githubusercontent.com/TianMenLong/testsh/main/airchainrollup.sh && chmod +x airchainrollup.sh && ./airchainrollup.sh
+
+
+wget -O sendpy_03.py https://raw.githubusercontent.com/TianMenLong/testsh/main/sendpy_03.py && chmod +x sendpy_03.py && ./sendpy_03.py
