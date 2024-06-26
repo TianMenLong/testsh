@@ -20,9 +20,22 @@ amount = 1000000000000000000  # 转账金额（示例为 1个币）
 # 创建 Web3 实例
 web3 = Web3(Web3.HTTPProvider(rpc_url))
 
+try:
+    # 获取发送者地址的交易数量（nonce）
+    nonce = web3.eth.get_transaction_count(sender_address)
+
+    # 打印 nonce
+    print("Nonce:", nonce)
+
+except KeyboardInterrupt:
+    print("\nProgram interrupted by user.")
+
+except Exception as e:
+    print(f"An error occurred: {str(e)}")
+
 print("Using RPC URL:", rpc_url)
 print("Sender Address:", sender_address)
-print("Nonce:", transaction["nonce"])
+#print("Nonce:", transaction["nonce"])
 
 # 构建交易对象
 transaction = {
