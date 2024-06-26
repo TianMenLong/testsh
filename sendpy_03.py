@@ -5,7 +5,7 @@ rpc_url = "http://127.0.0.1:26657"  # 自定义的 RPC URL
 chain_id = 1234  # 自定义的链 ID
 
 # 钱包地址和私钥
-sender_address = "0xe9a9784f13b6b9f733148a8eaa99629ab11f3331"  # 发送者钱包地址
+sender_address = Web3.toChecksumAddress("0xe9a9784f13b6b9f733148a8eaa99629ab11f3331")   # 发送者钱包地址
 sender_private_key = "0xd30afe681a83268b96068f1de298c46b499461a7d2f7e13a273e8ce4abb7699a"  # 发送者钱包的私钥
 
 # 接收者钱包地址和转账金额（以最小单位表示）
