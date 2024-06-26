@@ -20,6 +20,10 @@ amount = 1000000000000000000  # 转账金额（示例为 1个币）
 # 创建 Web3 实例
 web3 = Web3(Web3.HTTPProvider(rpc_url))
 
+print("Using RPC URL:", rpc_url)
+print("Sender Address:", sender_address)
+print("Nonce:", transaction["nonce"])
+
 # 构建交易对象
 transaction = {
     "to": receiver_address,
