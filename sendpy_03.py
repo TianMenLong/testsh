@@ -1,7 +1,8 @@
 from web3 import Web3
 
 # 自定义配置
-rpc_url = "http://127.0.0.1:8545"
+#rpc_url = "http://127.0.0.1:8545"
+rpc_url ="https://airchains-rpc.kubenode.xyz/"
 chain_id = 1  # 自定义的链 ID
 
 # 钱包地址和私钥
