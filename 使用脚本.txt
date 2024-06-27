@@ -9,4 +9,12 @@ wget -O airchain.sh https://raw.githubusercontent.com/TianMenLong/testsh/main/ai
 wget -O airchainrollup.sh https://raw.githubusercontent.com/TianMenLong/testsh/main/airchainrollup.sh && chmod +x airchainrollup.sh && ./airchainrollup.sh
 
 
-wget -O sendpy_03.py https://raw.githubusercontent.com/TianMenLong/testsh/main/sendpy_03.py && chmod +x sendpy_03.py && ./sendpy_03.py
+wget -O sendpy_03.py https://raw.githubusercontent.com/TianMenLong/testsh/main/sendpy_03.py && chmod +x sendpy_03.py 
+
+//单次执行
+python3 sendpy_03.py
+
+//循环执行
+while true; do python3 sendpy_03.py; sleep 0.01; done
+
+310107338
