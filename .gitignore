@@ -1,0 +1,10 @@
+/.vs/
+*.exe
+/Debug/
+/bin/
+
+/testweb3/ConsoleApp1/.vs
+/ContsoleApp1/bin
+/testweb3/
+
+

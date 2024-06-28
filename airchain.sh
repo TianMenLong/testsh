@@ -192,7 +192,7 @@ unset http_proxy
 unset https_proxy
 
 # 定义 JSON RPC URL 和其他参数
-JSON_RPC="https://airchains-rpc.kubenode.xyz/"
+JSON_RPC="https://rpc1.airchains.t.cosmostaking.com/"
 INFO="EVM Track"
 TRACKS="air_address"
 BOOTSTRAP_NODE="/ip4/$LOCAL_IP/tcp/2300/p2p/$NODE_ID"
@@ -201,7 +201,7 @@ BOOTSTRAP_NODE="/ip4/$LOCAL_IP/tcp/2300/p2p/$NODE_ID"
 create_station_cmd="go run cmd/main.go create-station \
     --accountName wallet \
     --accountPath $HOME/.tracks/junction-accounts/keys \
-    --jsonRPC \"https://airchains-rpc.kubenode.xyz/\" \
+    --jsonRPC \"https://rpc1.airchains.t.cosmostaking.com/\" \
     --info \"WASM Track\" \
     --tracks \"$AIR_ADDRESS\" \
     --bootstrapNode \"/ip4/$LOCAL_IP/tcp/2300/p2p/$NODE_ID\""
