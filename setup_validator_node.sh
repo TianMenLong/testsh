@@ -25,6 +25,7 @@ junctiond init mynode
 wget https://github.com/airchains-network/junction/releases/download/v0.1.0/genesis.json
 
 # 替换现有的创世文件
+mkdir -p ~/.junction/config
 cp genesis.json ~/.junction/config/genesis.json
 
 # 更新配置
@@ -35,7 +36,7 @@ sed -i 's|persistent_peers = ""|persistent_peers = "de2e7251667dee5de5eed98e54a5
 sed -i 's|minimum-gas-prices = ""|minimum-gas-prices = "0.00025amf"|' ~/.junction/config/app.toml
 
 # 启动节点
-junctiond start &
+junctiond start --home ~/.junction --moniker mynode --p2p.persistent_peers "de2e7251667dee5de5eed98e54a58749fadd23d8@34.22.237.85:26656" --minimum-gas-prices "0.00025amf" &
 
 # 等待节点同步
 while true; do
@@ -64,17 +65,17 @@ PUBKEY=$(junctiond comet show-validator | jq -r .key)
 # 创建 validator.json 文件
 cat <<EOF > validator.json
 {
-	"pubkey": "$PUBKEY",
-	"amount": "1000000amf",
-	"moniker": "$VALIDATOR_NAME",
-	"identity": "",
-	"website": "",
-	"security": "",
-	"details": "",
-	"commission-rate": "0.1",
-	"commission-max-rate": "0.2",
-	"commission-max-change-rate": "0.01",
-	"min-self-delegation": "1"
+    "pubkey": "$PUBKEY",
+    "amount": "1000000amf",
+    "moniker": "$VALIDATOR_NAME",
+    "identity": "",
+    "website": "",
+    "security": "",
+    "details": "",
+    "commission-rate": "0.1",
+    "commission-max-rate": "0.2",
+    "commission-max-change-rate": "0.01",
+    "min-self-delegation": "1"
 }
 EOF
 
