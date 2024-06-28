@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# 安装 jq 工具
+if ! command -v jq &> /dev/null
+then
+    echo "jq 未安装，正在安装 jq..."
+    sudo apt-get update
+    sudo apt-get install -y jq
+fi
+
 # 下载二进制文件
 wget https://github.com/airchains-network/junction/releases/download/v0.1.0/junctiond
 
