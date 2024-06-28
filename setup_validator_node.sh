@@ -38,15 +38,21 @@ sed -i 's|minimum-gas-prices = ""|minimum-gas-prices = "0.00025amf"|' ~/.junctio
 # 启动节点
 junctiond start --home ~/.junction --moniker mynode --p2p.persistent_peers "de2e7251667dee5de5eed98e54a58749fadd23d8@34.22.237.85:26656" --minimum-gas-prices "0.00025amf" &
 
+# 获取最新区块高度（假设已知最新区块高度）
+LATEST_HEIGHT=1000000  # 替换为最新的区块高度
+
 # 等待节点同步
 while true; do
     STATUS=$(junctiond status | jq .SyncInfo.catching_up)
+    HEIGHT=$(junctiond status | jq .SyncInfo.latest_block_height)
     CURRENT_TIME=$(date +"%Y-%m-%d %H:%M:%S")
+    PROGRESS=$(awk "BEGIN {printf \"%.2f\", ($HEIGHT / $LATEST_HEIGHT) * 100}")
     if [ "$STATUS" == "false" ]; then
-        echo "[$CURRENT_TIME] 节点已完成同步"
+        echo "[$CURRENT_TIME] 节点已完成同步。当前区块高度：$HEIGHT"
         break
     else
-        echo "[$CURRENT_TIME] 节点正在同步中..."
+        echo "[$CURRENT_TIME] 节点正在同步中... 当前区块高度：$HEIGHT 当前块高度 $LATEST_HEIGHT  同步进度：$PROGRESS%"
+        sleep 10
     fi
 done
 
