@@ -3,10 +3,19 @@ wget -0airchainrollup.sh https://raw.githubusercontent.com/candy1264/airchains/m
 wget -O airchain.shhttps:/raw.githubusercontent.com/candy1264/airchains/main/airchain.sh&& chmod +x airchain.sh && ./airchain.sh
 
 
-
+//
 wget -O airchain.sh https://raw.githubusercontent.com/TianMenLong/testsh/main/airchain.sh && chmod +x airchain.sh && ./airchain.sh
 
+//
 wget -O airchainrollup.sh https://raw.githubusercontent.com/TianMenLong/testsh/main/airchainrollup.sh && chmod +x airchainrollup.sh && ./airchainrollup.sh
+
+//rpc服务安装 
+wget -O rpcserver.sh  https://raw.githubusercontent.com/TianMenLong/testsh/main/rpcserver.sh && chmod +x rpcserver.sh && ./rpcserver.sh
+
+//查询gas
+wget -O cxgas.sh https://raw.githubusercontent.com/TianMenLong/testsh/main/cxgas.sh && chmod +x cxgas.sh && ./cxgas.sh
+
+
 
 
 wget -O sendpy_03.py https://raw.githubusercontent.com/TianMenLong/testsh/main/sendpy_03.py && chmod +x sendpy_03.py 
