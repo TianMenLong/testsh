@@ -41,12 +41,12 @@ junctiond start --home ~/.junction --moniker mynode --p2p.persistent_peers "de2e
 # 等待节点同步
 while true; do
     STATUS=$(junctiond status | jq .SyncInfo.catching_up)
+    CURRENT_TIME=$(date +"%Y-%m-%d %H:%M:%S")
     if [ "$STATUS" == "false" ]; then
-        echo "节点已完成同步"
+        echo "[$CURRENT_TIME] 节点已完成同步"
         break
     else
-        echo "节点正在同步中..."
-        sleep 10
+        echo "[$CURRENT_TIME] 节点正在同步中..."
     fi
 done
 
