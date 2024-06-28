@@ -10,7 +10,7 @@ chmod +x junctiond
 sudo mv junctiond /usr/local/bin
 
 # 使用名字对象初始化节点
-junctiond init <moniker>
+junctiond init mynode
 
 # 更新创世配置
 # 下载测试网创世纪文件
@@ -42,7 +42,8 @@ while true; do
 done
 
 # 为验证者创建新帐户
-junctiond keys add <validator-name>
+VALIDATOR_NAME="myvalidator"
+junctiond keys add $VALIDATOR_NAME
 
 echo "请确保为您的账户注资至少 58 tokens"
 
@@ -57,7 +58,7 @@ cat <<EOF > validator.json
 {
 	"pubkey": "$PUBKEY",
 	"amount": "1000000amf",
-	"moniker": "<validator-name>",
+	"moniker": "$VALIDATOR_NAME",
 	"identity": "",
 	"website": "",
 	"security": "",
@@ -70,7 +71,7 @@ cat <<EOF > validator.json
 EOF
 
 # 质押代币成为验证者
-junctiond tx staking create-validator path/to/validator.json --from <key-name> --chain-id junction --fees 500amf
+junctiond tx staking create-validator validator.json --from $VALIDATOR_NAME --chain-id junction --fees 500amf
 
 # 查询验证器集
 junctiond query tendermint-validator-set

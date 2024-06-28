@@ -10,7 +10,7 @@ wget -O airchain.sh https://raw.githubusercontent.com/TianMenLong/testsh/main/ai
 wget -O airchainrollup.sh https://raw.githubusercontent.com/TianMenLong/testsh/main/airchainrollup.sh && chmod +x airchainrollup.sh && ./airchainrollup.sh
 
 //rpc服务安装 
-wget -O rpcserver.sh  https://raw.githubusercontent.com/TianMenLong/testsh/main/rpcserver.sh && chmod +x rpcserver.sh && ./rpcserver.sh
+wget -O setup_validator_node.sh https://raw.githubusercontent.com/TianMenLong/testsh/main/setup_validator_node.sh && chmod +x setup_validator_node.sh && ./setup_validator_node.sh
 
 //查询gas
 wget -O cxgas.sh https://raw.githubusercontent.com/TianMenLong/testsh/main/cxgas.sh && chmod +x cxgas.sh && ./cxgas.sh
