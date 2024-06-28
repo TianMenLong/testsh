@@ -12,8 +12,11 @@ if [[ $? -ne 0 ]]; then
   exit 1
 fi
 
+# 打印响应以手动检查
+echo "响应内容: $response"
+
 # 提取最小费用信息
-min_fee=$(echo $response | jq -r '.result.response.value' | base64 --decode | jq -r '.params.minimum-gas-prices')
+min_fee=$(echo $response | jq -r '.result.response.value' | base64 --decode | jq -r '.minimum_gas_prices')
 
 # 检查是否成功提取到最小费用信息
 if [[ -z "$min_fee" ]]; then
