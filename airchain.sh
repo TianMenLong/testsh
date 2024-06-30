@@ -239,30 +239,34 @@ function evmos_log(){
 function stationd_log(){
     journalctl -u stationd -f
 }
+
+function restart_stationd(){
+    sudo systemctl restart stationd
+}
+
 function private_key(){
     #evmos私钥#
     cd $HOME/data/airchains/evm-station/ &&  /bin/bash ./scripts/local-keys.sh
     #airchain助记词#
     cat $HOME/.tracks/junction-accounts/keys/wallet.wallet.json
-
 }
+
 function restart(){
-sudo systemctl restart evmosd
-sudo systemctl restart tracksd
+    sudo systemctl restart evmosd
+    sudo systemctl restart tracksd
 }
 
 function delete_node(){
-sudo rm -rf data
-sudo rm -rf .wasmstationd
-sudo rm -rf .tracks
-sudo systemctl stop wasmstationd.service
-sudo systemctl stop stationd.service
-sudo systemctl disable wasmstationd.service
-sudo systemctl disable stationd.service
-sudo pkill -9 wasmstationd
-sudo pkill -9 stationd
-sudo journalctl --vacuum-time=1s
-
+    sudo rm -rf data
+    sudo rm -rf .wasmstationd
+    sudo rm -rf .tracks
+    sudo systemctl stop wasmstationd.service
+    sudo systemctl stop stationd.service
+    sudo systemctl disable wasmstationd.service
+    sudo systemctl disable stationd.service
+    sudo pkill -9 wasmstationd
+    sudo pkill -9 stationd
+    sudo journalctl --vacuum-time=1s
 }
 
 # 主菜单
@@ -275,20 +279,21 @@ function main_menu() {
         echo "3. 查看stationd状态"
         echo "4. 导出所有私钥"
         echo "5. 删除节点"
-        read -p "请输入选项（1-11）: " OPTION
+        echo "6. 重启 stationd 服务"
+        read -p "请输入选项（1-6）: " OPTION
 
         case $OPTION in
         1) install_node ;;
-        2) wasmstationd_log ;;
+        2) evmos_log ;;
         3) stationd_log ;;
         4) private_key ;;
         5) delete_node ;;
+        6) restart_stationd ;;
         *) echo "无效选项。" ;;
         esac
         echo "按任意键返回主菜单..."
         read -n 1
     done
-    
 }
 
 # 显示主菜单
