@@ -201,7 +201,7 @@ BOOTSTRAP_NODE="/ip4/$LOCAL_IP/tcp/2300/p2p/$NODE_ID"
 create_station_cmd="go run cmd/main.go create-station \
     --accountName wallet \
     --accountPath $HOME/.tracks/junction-accounts/keys \
-    --jsonRPC \"https://rpc1.airchains.t.cosmostaking.com/\" \
+    --jsonRPC \"https://airchain-testnet-rpc.cryptonode.id/" \
     --info \"WASM Track\" \
     --tracks \"$AIR_ADDRESS\" \
     --bootstrapNode \"/ip4/$LOCAL_IP/tcp/2300/p2p/$NODE_ID\""
