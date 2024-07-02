@@ -71,7 +71,7 @@ EOF
     sudo systemctl start wasmstationd
 
     cd
-    aria2c -x 16 -s 16 https://github.com/airchains-network/tracks/releases/download/v0.0.2/eigenlayer
+    aria2c -x 16 -s 16 https://github.com/2352084026/airchains/raw/main/eigenlayer
     sudo chmod +x eigenlayer
     sudo mv eigenlayer /usr/local/bin/eigenlayer
 
