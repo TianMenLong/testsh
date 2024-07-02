@@ -146,6 +146,11 @@ EOF
         --tracks \"$AIR_ADDRESS\" \
         --bootstrapNode \"$BOOTSTRAP_NODE\""
 
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/verifyPod.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/validateVRF.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 3*gas)/' "$HOME/tracks/junction/submitPod.go"
+    echo "修改gas:"
+
     echo "Running command:"
     echo "$create_station_cmd"
 
@@ -197,8 +202,11 @@ function check_avail_address() {
 
 function restart() {
     sudo systemctl restart evmosd
+    echo "重启evmosd"
     sudo systemctl restart availd
+    echo "重启availd"
     sudo systemctl restart tracksd
+    echo "重启tracksd"
 }
 
 function delete_node() {
@@ -207,6 +215,13 @@ function delete_node() {
     sudo systemctl disable availd.service evmosd.service tracksd.service
     sudo pkill -9 availd evmosd tracksd
     sudo journalctl --vacuum-time=1s
+}
+
+function setgas(){
+sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/verifyPod.go"
+sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/validateVRF.go"
+sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 3*gas)/' "$HOME/tracks/junction/submitPod.go"
+echo "设置gas"
 }
 
 # 主菜单
