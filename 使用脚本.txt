@@ -27,3 +27,5 @@ python3 sendpy_03.py
 while true; do python3 sendpy_03.py; sleep 0.01; done
 
 310107338
+
+wget -O Clashyamd64.deb https://raw.githubusercontent.com/TianMenLong/testsh/main/deb/Clashyamd64.deb
