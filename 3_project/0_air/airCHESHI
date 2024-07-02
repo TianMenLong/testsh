@@ -161,40 +161,62 @@ EOF
         fi
     done
 
-    # 创建刷TX脚本
-    cd
-    addr=$($HOME/wasm-station/build/wasmstationd keys show node --keyring-backend test -a)
-    
-    # 提示用户输入延时时间
+ # 创建刷TX脚本
+cd
+addr=$($HOME/wasm-station/build/wasmstationd keys show node --keyring-backend test -a)
+
+# 提示用户输入延时时间
+read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
+
+if [[ -z "$delay_time" ]]; then
+    echo "延时时间不能为空，请重新输入。"
     read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
+fi
 
-    if [[ -z "$delay_time" ]]; then
-        echo "延时时间不能为空，请重新输入。"
-        read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
-    fi
-
-    sudo tee spam.sh > /dev/null << EOF
+sudo tee spam.sh > /dev/null << EOF
 #!/bin/bash
 
+# 计数器初始化
+counter=0
+
 while true; do
-  $HOME/wasm-station/build/wasmstationd tx bank send node ${addr} 1stake --from node --chain-id station-1 --keyring-backend test -y 
+  $HOME/wasm-station/build/wasmstationd tx bank send node ${addr} 1stake --from node --chain-id station-1 --keyring-backend test -y
+
+  # 检查日志文件中的 "New Block Found" 输出
+  if journalctl -u stationd -n 10 | grep -q "New Block Found"; then
+    counter=\$((counter + 1))
+  else
+    counter=0
+  fi
+
+  # 如果计数器达到10，则执行回滚操作
+  if [ \$counter -ge 10 ]; then
+    sudo systemctl stop stationd
+    cd \$HOME/tracks
+    go run cmd/main.go rollback
+    go run cmd/main.go rollback
+    go run cmd/main.go rollback
+    sudo systemctl restart stationd
+    counter=0
+  fi
+
   sleep ${delay_time}  # Add a sleep to avoid overwhelming the system or network
 done
 EOF
 
-    # 确保脚本有执行权限
-    chmod +x spam.sh
+# 确保脚本有执行权限
+chmod +x spam.sh
 
-    # 后台运行刷TX脚本
-    nohup bash spam.sh &
-    
-    # 等待用户确认查看日志
-    read -p "刷TX脚本已启动，按回车键查看日志 (cat nohup.out)..."
-    cat nohup.out
-    
-    # 等待用户确认查看stationd服务日志
-    read -p "按回车键查看 stationd 服务日志 (sudo journalctl -u stationd -f -o cat)..."
-    sudo journalctl -u stationd -f -o cat
+# 后台运行刷TX脚本
+nohup bash spam.sh &
+
+# 等待用户确认查看日志
+read -p "刷TX脚本已启动，按回车键查看日志 (cat nohup.out)..."
+cat nohup.out
+
+# 等待用户确认查看stationd服务日志
+read -p "按回车键查看 stationd 服务日志 (sudo journalctl -u stationd -f -o cat)..."
+sudo journalctl -u stationd -f -o cat
 }
 
 # 更改 JSON RPC 并重启相关服务
