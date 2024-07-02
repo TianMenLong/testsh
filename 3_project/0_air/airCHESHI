@@ -26,7 +26,8 @@ if command -v go >/dev/null 2>&1; then
     echo "go 已安装，跳过安装步骤。"
 else
     echo "下载并安装 Go..."
-    wget -c https://golang.org/dl/go1.22.4.linux-amd64.tar.gz -O - | sudo tar -xz -C /usr/local
+    wget http://mirrors.aliyun.com/golang/go1.22.4.linux-amd64.tar.gz -O go1.22.4.linux-amd64.tar.gz
+    sudo tar -xzf go1.22.4.linux-amd64.tar.gz -C /usr/local
     echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
     source ~/.bashrc
 fi
@@ -64,7 +65,7 @@ EOF
     sudo systemctl daemon-reload && \
     sudo systemctl enable wasmstationd && \
     sudo systemctl start wasmstationd
-    
+
     cd
     aria2c -x 16 -s 16 https://github.com/airchains-network/tracks/releases/download/v0.0.2/eigenlayer
     sudo chmod +x eigenlayer
@@ -161,19 +162,19 @@ EOF
         fi
     done
 
- # 创建刷TX脚本
-cd
-addr=$($HOME/wasm-station/build/wasmstationd keys show node --keyring-backend test -a)
+    # 创建刷TX脚本
+    cd
+    addr=$($HOME/wasm-station/build/wasmstationd keys show node --keyring-backend test -a)
 
-# 提示用户输入延时时间
-read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
-
-if [[ -z "$delay_time" ]]; then
-    echo "延时时间不能为空，请重新输入。"
+    # 提示用户输入延时时间
     read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
-fi
 
-sudo tee spam.sh > /dev/null << EOF
+    if [[ -z "$delay_time" ]]; then
+        echo "延时时间不能为空，请重新输入。"
+        read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
+    fi
+
+    sudo tee spam.sh > /dev/null << EOF
 #!/bin/bash
 
 # 计数器初始化
@@ -204,19 +205,19 @@ while true; do
 done
 EOF
 
-# 确保脚本有执行权限
-chmod +x spam.sh
+    # 确保脚本有执行权限
+    chmod +x spam.sh
 
-# 后台运行刷TX脚本
-nohup bash spam.sh &
+    # 后台运行刷TX脚本
+    nohup bash spam.sh &
 
-# 等待用户确认查看日志
-read -p "刷TX脚本已启动，按回车键查看日志 (cat nohup.out)..."
-cat nohup.out
+    # 等待用户确认查看日志
+    read -p "刷TX脚本已启动，按回车键查看日志 (cat nohup.out)..."
+    cat nohup.out
 
-# 等待用户确认查看stationd服务日志
-read -p "按回车键查看 stationd 服务日志 (sudo journalctl -u stationd -f -o cat)..."
-sudo journalctl -u stationd -f -o cat
+    # 等待用户确认查看stationd服务日志
+    read -p "按回车键查看 stationd 服务日志 (sudo journalctl -u stationd -f -o cat)..."
+    sudo journalctl -u stationd -f -o cat
 }
 
 # 更改 JSON RPC 并重启相关服务
@@ -302,10 +303,5 @@ function main_menu() {
     done
 }
 
-
-
-
-
 # 显示主菜单
 main_menu
-
