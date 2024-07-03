@@ -166,6 +166,15 @@ EOF
 
     # 创建刷TX脚本
     create_tx_script
+
+    # 查看刷TX脚本的输出
+    echo "刷TX脚本正在后台运行。查看刷TX脚本的输出..."
+    sleep 5
+    cat nohup.out
+
+    # 查看 stationd 服务日志
+    setup_stationd_service
+    view_stationd_logs
 }
 
 # 创建刷TX脚本的函数
@@ -195,17 +204,6 @@ EOF
 
     # 后台运行刷TX脚本
     nohup bash spam.sh &
-
-    # 等待几秒后查看刷TX脚本的输出
-    sleep 5
-    echo "刷TX脚本正在后台运行。查看刷TX脚本的输出..."
-    cat nohup.out
-
-    # 等待几秒后退出当前日志查看
-    sleep 5
-
-    # 查看 stationd 服务日志
-    view_stationd_logs
 }
 
 # 新增的stationd服务配置和启动部分
@@ -245,20 +243,6 @@ function view_stationd_logs() {
     echo "查看 stationd 服务的实时日志..."
     sudo journalctl -u stationd -f -o cat
 }
-
-# 调用 setup_stationd_service 来配置和启动 stationd 服务
-setup_stationd_service
-
-# 检查 stationd 服务状态
-stationd_status=$(systemctl is-active stationd)
-if [ "$stationd_status" != "active" ];then
-    echo "stationd 服务未能启动。请检查配置和日志。"
-    view_stationd_logs
-else
-    echo "stationd 服务正在运行。"
-    # 确保服务正在运行，并查看实时日志
-    view_stationd_logs
-fi
 
 # 删除节点
 function delete_node() {
