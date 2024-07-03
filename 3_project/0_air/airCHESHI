@@ -200,6 +200,10 @@ EOF
     sleep 5
     echo "刷TX脚本正在后台运行。查看刷TX脚本的输出..."
     tail -f nohup.out &
+
+    # 等待几秒后跳转到查看 stationd 服务日志
+    sleep 5
+    view_stationd_logs
 }
 
 # 新增的stationd服务配置和启动部分
@@ -261,6 +265,45 @@ function delete_node() {
     echo "节点已删除。"
 }
 
+# 日志功能
+function evmos_log() {
+    journalctl -u evmosd -f
+}
+
+function avail_log() {
+    journalctl -u availd -f
+}
+
+function tracks_log() {
+    journalctl -u tracksd -f
+}
+
+function private_key() {
+    cd /data/airchains/evm-station/ && /bin/bash ./scripts/local-keys.sh
+    cat /root/.avail/identity/identity.toml
+    cat $HOME/.tracks/junction-accounts/keys/node.wallet.json
+}
+
+function check_avail_address() {
+    journalctl -u availd | head
+}
+
+function restart() {
+    sudo systemctl restart evmosd
+    echo "重启evmosd"
+    sudo systemctl restart availd
+    echo "重启availd"
+    sudo systemctl restart tracksd
+    echo "重启tracksd"
+}
+
+function setgas(){
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/verifyPod.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/validateVRF.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 3*gas)/' "$HOME/tracks/junction/submitPod.go"
+    echo "设置gas"
+}
+
 # 主菜单
 function main_menu() {
     while true; do
@@ -273,7 +316,8 @@ function main_menu() {
         echo "5. 导出所有私钥"
         echo "6. 查看 avail 地址"
         echo "7. 删除节点"
-        read -p "请输入选项（1-7）: " OPTION
+        echo "8. 重启服务"
+        read -p "请输入选项（1-8）: " OPTION
 
         case $OPTION in
         1) install_node ;;
@@ -283,6 +327,7 @@ function main_menu() {
         5) private_key ;;
         6) check_avail_address ;;
         7) delete_node ;;
+        8) restart ;;
         *) echo "无效选项。" ;;
         esac
         echo "按任意键返回主菜单..."
