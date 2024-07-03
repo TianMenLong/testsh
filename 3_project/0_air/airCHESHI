@@ -249,6 +249,18 @@ else
     view_stationd_logs
 fi
 
+# 删除节点
+function delete_node() {
+    sudo systemctl stop wasmstationd stationd
+    sudo systemctl disable wasmstationd stationd
+    sudo rm -rf $HOME/wasm-station $HOME/tracks $HOME/.wasmstationd $HOME/.tracks $HOME/.eigenlayer
+    sudo rm /etc/systemd/system/wasmstationd.service /etc/systemd/system/stationd.service
+    sudo systemctl daemon-reload
+    sudo pkill -f wasmstationd
+    sudo pkill -f stationd
+    echo "节点已删除。"
+}
+
 # 主菜单
 function main_menu() {
     while true; do
