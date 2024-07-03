@@ -2,6 +2,8 @@
 
 # 安装 V2RayA
 function installv2raya() {
+    mproxy()
+
     # 添加公钥
     wget -qO - https://apt.v2raya.org/key/public-key.asc | sudo tee /etc/apt/keyrings/v2raya.asc
 
@@ -13,6 +15,8 @@ function installv2raya() {
 
     # 安装 V2RayA 和 V2Ray
     sudo apt install v2raya v2ray
+
+    cproxy()
 }
 
 # 启动 V2RayA 服务
@@ -31,6 +35,31 @@ function rmv2rary() {
     sudo apt autoremove
     sudo rm /etc/apt/sources.list.d/v2raya.list
     sudo rm /etc/apt/keyrings/v2raya.asc
+}
+
+#修改代理
+function mproxy(){
+    # 提示用户输入代理IP
+    read -p "请输入代理IP地址: " proxy_ip
+
+    # 检查输入是否为空
+    if [[ -z "$proxy_ip" ]]; then
+      echo "IP地址不能为空"
+      exit 1
+    fi
+
+    # 固定端口为7890
+    proxy_port=7890
+
+    # 设置环境变量
+    export http_proxy="http://$proxy_ip:$proxy_port"
+    export https_proxy="http://$proxy_ip:$proxy_port"
+}
+
+#取消代理
+function cproxy(){
+    unset http_proxy 
+    unset https_proxy
 }
 
 # 主菜单
