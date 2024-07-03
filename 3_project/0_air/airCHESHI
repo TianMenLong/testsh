@@ -21,22 +21,17 @@ install_if_needed clang
 install_if_needed pkg-config
 install_if_needed libssl-dev
 install_if_needed wget
-install_if_needed aria2
 
 # 检查并安装 Go
 if command -v go >/dev/null 2>&1; then
     echo "go 已安装，跳过安装步骤。"
 else
     echo "下载并安装 Go..."
-    wget http://mirrors.aliyun.com/golang/go1.22.4.linux-amd64.tar.gz -O go1.22.4.linux-amd64.tar.gz
-    sudo tar -xzf go1.22.4.linux-amd64.tar.gz -C /usr/local
+    wget -c http://mirrors.aliyun.com/golang/go1.22.4.linux-amd64.tar.gz -O go1.22.4.linux-amd64.tar.gz
+    sudo tar -C /usr/local -xzf go1.22.4.linux-amd64.tar.gz
     echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
-    echo 'export GOPROXY=https://goproxy.cn,direct' >> ~/.bashrc
     source ~/.bashrc
 fi
-
-# 设置 Go 代理
-export GOPROXY=https://goproxy.cn,direct
 
 # 验证安装后的 Go 版本
 echo "当前 Go 版本："
@@ -63,6 +58,9 @@ ExecStart=$HOME/wasm-station/build/wasmstationd start --api.enable
 Restart=always
 RestartSec=3
 LimitNOFILE=10000
+
+[Install]
+WantedBy=multi-user.target
 EOF
 
     sudo systemctl daemon-reload && \
@@ -70,7 +68,7 @@ EOF
     sudo systemctl start wasmstationd
 
     cd
-    aria2c -x 16 -s 16 https://github.com/2352084026/airchains/raw/main/eigenlayer
+    wget https://github.com/airchains-network/tracks/releases/download/v0.0.2/eigenlayer
     sudo chmod +x eigenlayer
     sudo mv eigenlayer /usr/local/bin/eigenlayer
 
@@ -179,7 +177,6 @@ EOF
 
     sudo tee spam.sh > /dev/null << EOF
 #!/bin/bash
-
 while true; do
   $HOME/wasm-station/build/wasmstationd tx bank send node ${addr} 1stake --from node --chain-id station-1 --keyring-backend test -y
   sleep ${delay_time}  # Add a sleep to avoid overwhelming the system or network
@@ -191,39 +188,6 @@ EOF
 
     # 后台运行刷TX脚本
     nohup bash spam.sh &
-
-    # 提示用户手动查看日志
-    echo "刷TX脚本已启动。"
-    echo "请手动查看日志："
-    echo "cat nohup.out"
-    echo "按任意键继续..."
-    read -n 1
-
-    echo "请手动查看 stationd 服务日志："
-    echo "sudo journalctl -u stationd -f -o cat"
-    echo "按任意键返回主菜单..."
-    read -n 1
-}
-
-# 停止刷TX脚本
-function stop_spam_script() {
-    pkill -f spam.sh
-    echo "刷TX脚本已停止。"
-}
-
-# 更改 JSON RPC 并重启相关服务
-function change_rpc() {
-    read -p "请输入新的 JSON RPC 地址: " new_rpc_address
-
-    # 更新配置文件或其他存储 JSON RPC 地址的位置
-    CONFIG_FILE="$HOME/.tracks/config/sequencer.toml"
-    sed -i.bak "s|jsonRPC = \".*\"|jsonRPC = \"$new_rpc_address\"|" "$CONFIG_FILE"
-
-    # 重启相关服务
-    sudo systemctl restart wasmstationd
-    sudo systemctl restart stationd
-
-    echo "JSON RPC 地址已更新并重启相关服务。"
 }
 
 # 日志功能
@@ -267,10 +231,10 @@ function delete_node() {
 }
 
 function setgas(){
-sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/verifyPod.go"
-sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/validateVRF.go"
-sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 3*gas)/' "$HOME/tracks/junction/submitPod.go"
-echo "设置gas"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/verifyPod.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/validateVRF.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 3*gas)/' "$HOME/tracks/junction/submitPod.go"
+    echo "设置gas"
 }
 
 # 主菜单
@@ -285,9 +249,7 @@ function main_menu() {
         echo "5. 导出所有私钥"
         echo "6. 查看 avail 地址"
         echo "7. 删除节点"
-        echo "8. 更改 JSON RPC 并重启相关服务"
-        echo "9. 停止刷TX脚本"
-        read -p "请输入选项（1-9）: " OPTION
+        read -p "请输入选项（1-7）: " OPTION
 
         case $OPTION in
         1) install_node ;;
@@ -297,8 +259,6 @@ function main_menu() {
         5) private_key ;;
         6) check_avail_address ;;
         7) delete_node ;;
-        8) change_rpc ;;
-        9) stop_spam_script ;;
         *) echo "无效选项。" ;;
         esac
         echo "按任意键返回主菜单..."
