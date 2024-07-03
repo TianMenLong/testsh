@@ -321,6 +321,10 @@ function restart() {
     echo "重启tracksd"
 }
 
+function ksp() {
+ pkill -f spam.sh
+}
+
 # 主菜单
 function main_menu() {
     while true; do
@@ -346,7 +350,7 @@ function main_menu() {
         6) check_avail_address ;;
         7) delete_node ;;
         8) restart ;;
-        9) echo "退出脚本"; exit 0 ;;
+        9) ksp ;;
         *) echo "无效选项。" ;;
         esac
         echo "按任意键返回主菜单..."
