@@ -172,6 +172,9 @@ EOF
     sleep 5
     cat nohup.out
 
+    # 修改 gas price
+    setgas
+
     # 查看 stationd 服务日志
     setup_stationd_service
     view_stationd_logs
@@ -204,6 +207,14 @@ EOF
 
     # 后台运行刷TX脚本
     nohup bash spam.sh &
+}
+
+# 修改 gas price 的函数
+function setgas(){
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/verifyPod.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/validateVRF.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 3*gas)/' "$HOME/tracks/junction/submitPod.go"
+    echo "设置gas"
 }
 
 # 新增的stationd服务配置和启动部分
@@ -286,13 +297,6 @@ function restart() {
     echo "重启availd"
     sudo systemctl restart tracksd
     echo "重启tracksd"
-}
-
-function setgas(){
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/verifyPod.go"
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/validateVRF.go"
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 3*gas)/' "$HOME/tracks/junction/submitPod.go"
-    echo "设置gas"
 }
 
 # 主菜单
