@@ -262,7 +262,7 @@ function view_stationd_logs() {
             # 如果检测到错误或连续15条包含"INF New Block Found module=blocksync"的日志
             error_count=$(echo "$line" | grep -c "Error")
             block_count=$(echo "$line" | grep -c "INF New Block Found module=blocksync")
-            if ((error_count > 0 || block_count >= 15)); then
+            if ((error_count > 0 || block_count >= 25)); then
                 echo "检测到错误或连续15条'INF New Block Found module=blocksync'日志，执行回滚操作..."
                 sudo systemctl stop stationd
                 cd $HOME/tracks
