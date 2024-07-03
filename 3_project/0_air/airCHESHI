@@ -199,15 +199,12 @@ EOF
     # 后台运行刷TX脚本
     nohup bash spam.sh &
 
-    # 等待用户确认查看日志
-    read -p "刷TX脚本已启动，是否查看日志 (yes/no)? " view_log
-    if [[ "$view_log" == "yes" ]]; then
-        tail -f nohup.out
-    fi
+    # 手动查看日志
+    echo "刷TX脚本已启动，手动查看日志："
+    echo "cat nohup.out"
 
-    # 等待用户确认查看stationd服务日志
-    read -p "按回车键查看 stationd 服务日志 (sudo journalctl -u stationd -f -o cat)..."
-    sudo journalctl -u stationd -f -o cat
+    echo "手动查看 stationd 服务日志："
+    echo "sudo journalctl -u stationd -f -o cat"
 }
 
 # 停止刷TX脚本
