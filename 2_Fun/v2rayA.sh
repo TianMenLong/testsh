@@ -2,7 +2,7 @@
 
 # 安装 V2RayA
 function installv2raya() {
-    mproxy();
+    mproxy()
 
     # 添加公钥
     wget -qO - https://apt.v2raya.org/key/public-key.asc | sudo tee /etc/apt/keyrings/v2raya.asc
@@ -16,7 +16,7 @@ function installv2raya() {
     # 安装 V2RayA 和 V2Ray
     sudo apt install v2raya v2ray
 
-    cproxy();
+    cproxy()
 }
 
 # 启动 V2RayA 服务
