@@ -196,94 +196,11 @@ EOF
     # 后台运行刷TX脚本
     nohup bash spam.sh &
 
-    # 等待用户输入 'qwer' 后返回主菜单
-    echo "刷TX脚本正在后台运行。输入 'qwer' 并回车以返回主菜单..."
-    while true; do
-        read -p "" user_input
-        if [[ "$user_input" == "qwer" ]]; then
-            break
-        fi
-    done
+    # 等待几秒后查看刷TX脚本的输出
+    sleep 5
+    echo "刷TX脚本正在后台运行。查看刷TX脚本的输出..."
+    tail -f nohup.out &
 }
-
-# 日志功能
-function evmos_log() {
-    journalctl -u evmosd -f
-}
-
-function avail_log() {
-    journalctl -u availd -f
-}
-
-function tracks_log() {
-    journalctl -u tracksd -f
-}
-
-function private_key() {
-    cd /data/airchains/evm-station/ && /bin/bash ./scripts/local-keys.sh
-    cat /root/.avail/identity/identity.toml
-    cat $HOME/.tracks/junction-accounts/keys/node.wallet.json
-}
-
-function check_avail_address() {
-    journalctl -u availd | head
-}
-
-function restart() {
-    sudo systemctl restart evmosd
-    echo "重启evmosd"
-    sudo systemctl restart availd
-    echo "重启availd"
-    sudo systemctl restart tracksd
-    echo "重启tracksd"
-}
-
-function delete_node() {
-    sudo rm -rf data .evmosd .avail .tracks
-    sudo systemctl stop availd.service evmosd.service tracksd.service
-    sudo systemctl disable availd.service evmosd.service tracksd.service
-    sudo pkill -9 availd evmosd tracksd
-    sudo journalctl --vacuum-time=1s
-}
-
-function setgas(){
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/verifyPod.go"
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/validateVRF.go"
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 3*gas)/' "$HOME/tracks/junction/submitPod.go"
-    echo "设置gas"
-}
-
-# 主菜单
-function main_menu() {
-    while true; do
-        clear
-        echo "请选择要执行的操作:"
-        echo "1. 安装节点"
-        echo "2. 查看 evmos 状态"
-        echo "3. 查看 avail 状态"
-        echo "4. 查看 tracks 状态"
-        echo "5. 导出所有私钥"
-        echo "6. 查看 avail 地址"
-        echo "7. 删除节点"
-        read -p "请输入选项（1-7）: " OPTION
-
-        case $OPTION in
-        1) install_node ;;
-        2) evmos_log ;;
-        3) avail_log ;;
-        4) tracks_log ;;
-        5) private_key ;;
-        6) check_avail_address ;;
-        7) delete_node ;;
-        *) echo "无效选项。" ;;
-        esac
-        echo "按任意键返回主菜单..."
-        read -n 1
-    done
-}
-
-# 显示主菜单
-main_menu
 
 # 新增的stationd服务配置和启动部分
 function setup_stationd_service() {
@@ -328,5 +245,38 @@ if [ "$stationd_status" != "active" ];then
     view_stationd_logs
 else
     echo "stationd 服务正在运行。"
+    # 确保服务正在运行，并查看实时日志
+    view_stationd_logs
 fi
-v
+
+# 主菜单
+function main_menu() {
+    while true; do
+        clear
+        echo "请选择要执行的操作:"
+        echo "1. 安装节点"
+        echo "2. 查看 evmos 状态"
+        echo "3. 查看 avail 状态"
+        echo "4. 查看 tracks 状态"
+        echo "5. 导出所有私钥"
+        echo "6. 查看 avail 地址"
+        echo "7. 删除节点"
+        read -p "请输入选项（1-7）: " OPTION
+
+        case $OPTION in
+        1) install_node ;;
+        2) evmos_log ;;
+        3) avail_log ;;
+        4) tracks_log ;;
+        5) private_key ;;
+        6) check_avail_address ;;
+        7) delete_node ;;
+        *) echo "无效选项。" ;;
+        esac
+        echo "按任意键返回主菜单..."
+        read -n 1
+    done
+}
+
+# 显示主菜单
+main_menu
