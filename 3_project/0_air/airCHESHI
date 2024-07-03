@@ -199,10 +199,12 @@ EOF
     # 等待几秒后查看刷TX脚本的输出
     sleep 5
     echo "刷TX脚本正在后台运行。查看刷TX脚本的输出..."
-    tail -f nohup.out &
+    cat nohup.out
 
-    # 等待几秒后跳转到查看 stationd 服务日志
+    # 等待几秒后退出当前日志查看
     sleep 5
+
+    # 查看 stationd 服务日志
     view_stationd_logs
 }
 
