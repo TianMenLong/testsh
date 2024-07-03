@@ -1,3 +1,6 @@
+# 设置 PATH 环境变量
+export PATH=$PATH:/usr/local/go/bin
+
 # 检查并安装所需的工具
 install_if_needed() {
     local package=$1
@@ -40,9 +43,6 @@ export GOPROXY=https://goproxy.cn,direct
 echo "当前 Go 版本："
 go version
 
-# 设置 PATH 环境变量
-export PATH=$PATH:/usr/local/go/bin
-
 # 安装节点
 function install_node() {
     sudo apt-get update && sudo apt-get install jq build-essential -y
@@ -70,7 +70,6 @@ TimeoutStopSec=120  # 增加停止超时时间为120秒
 
 [Install]
 WantedBy=multi-user.target
-
 EOF
 
     sudo systemctl daemon-reload && \
@@ -85,7 +84,7 @@ EOF
     # 定义文件路径
     KEY_FILE="$HOME/.eigenlayer/operator_keys/wallet.ecdsa.key.json"
     # 检查文件是否存在
-    if [ -f "$KEY_FILE" ]; then
+    if [ -f "$KEY_FILE" ];then
         echo "文件 $KEY_FILE 已经存在，删除文件"
         rm -f "$KEY_FILE"
     fi
@@ -173,19 +172,19 @@ EOF
         fi
     done
 
-# 创建刷TX脚本
-cd
-addr=$($HOME/wasm-station/build/wasmstationd keys show node --keyring-backend test -a)
+    # 创建刷TX脚本
+    cd
+    addr=$($HOME/wasm-station/build/wasmstationd keys show node --keyring-backend test -a)
 
-# 提示用户输入延时时间
-read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
-
-if [[ -z "$delay_time" ]]; then
-    echo "延时时间不能为空，请重新输入。"
+    # 提示用户输入延时时间
     read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
-fi
 
-sudo tee spam.sh > /dev/null << EOF
+    if [[ -z "$delay_time" ]]; then
+        echo "延时时间不能为空，请重新输入。"
+        read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
+    fi
+
+    sudo tee spam.sh > /dev/null << EOF
 #!/bin/bash
 
 # 计数器初始化
@@ -202,7 +201,7 @@ while true; do
   fi
 
   # 如果计数器达到10，则执行回滚操作
-  if [ \$block_counter -ge 10]; then
+  if [ \$block_counter -ge 10 ]; then
     sudo systemctl stop stationd
     cd \$HOME/tracks
     go run cmd/main.go rollback
@@ -214,22 +213,29 @@ while true; do
 
   sleep ${delay_time}  # Add a sleep to avoid overwhelming the system or network
 done
-
 EOF
 
-# 确保脚本有执行权限
-chmod +x spam.sh
+    # 确保脚本有执行权限
+    chmod +x spam.sh
 
-# 后台运行刷TX脚本
-nohup bash spam.sh &
+    # 后台运行刷TX脚本
+    nohup bash spam.sh &
 
-# 等待用户确认查看日志
-read -p "刷TX脚本已启动，按回车键查看日志 (tail -f nohup.out)..."
-tail -f nohup.out
+    # 等待用户确认查看日志
+    read -p "刷TX脚本已启动，是否查看日志 (yes/no)? " view_log
+    if [[ "$view_log" == "yes" ]]; then
+        tail -f nohup.out
+    fi
 
-# 等待用户确认查看stationd服务日志
-read -p "按回车键查看 stationd 服务日志 (sudo journalctl -u stationd -f -o cat)..."
-sudo journalctl -u stationd -f -o cat
+    # 等待用户确认查看stationd服务日志
+    read -p "按回车键查看 stationd 服务日志 (sudo journalctl -u stationd -f -o cat)..."
+    sudo journalctl -u stationd -f -o cat
+}
+
+# 停止刷TX脚本
+function stop_spam_script() {
+    pkill -f spam.sh
+    echo "刷TX脚本已停止。"
 }
 
 # 更改 JSON RPC 并重启相关服务
@@ -297,7 +303,8 @@ function main_menu() {
         echo "6. 查看 avail 地址"
         echo "7. 删除节点"
         echo "8. 更改 JSON RPC 并重启相关服务"
-        read -p "请输入选项（1-8）: " OPTION
+        echo "9. 停止刷TX脚本"
+        read -p "请输入选项（1-9）: " OPTION
 
         case $OPTION in
         1) install_node ;;
@@ -308,6 +315,7 @@ function main_menu() {
         6) check_avail_address ;;
         7) delete_node ;;
         8) change_rpc ;;
+        9) stop_spam_script ;;
         *) echo "无效选项。" ;;
         esac
         echo "按任意键返回主菜单..."
