@@ -334,7 +334,8 @@ function main_menu() {
         echo "6. 查看 avail 地址"
         echo "7. 删除节点"
         echo "8. 重启服务"
-        read -p "请输入选项（1-8）: " OPTION
+        echo "9. 退出脚本"
+        read -p "请输入选项（1-9）: " OPTION
 
         case $OPTION in
         1) install_node ;;
@@ -345,6 +346,7 @@ function main_menu() {
         6) check_avail_address ;;
         7) delete_node ;;
         8) restart ;;
+        9) echo "退出脚本"; exit 0 ;;
         *) echo "无效选项。" ;;
         esac
         echo "按任意键返回主菜单..."
