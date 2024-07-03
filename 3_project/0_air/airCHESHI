@@ -58,12 +58,15 @@ After=network.target
 [Service]
 User=$USER
 ExecStart=$HOME/wasm-station/build/wasmstationd start --api.enable
+ExecStop=/bin/kill -s SIGTERM \$MAINPID  # 优雅停止服务
 Restart=always
 RestartSec=3
 LimitNOFILE=10000
+TimeoutStopSec=120  # 增加停止超时时间为120秒
 
 [Install]
 WantedBy=multi-user.target
+
 EOF
 
     sudo systemctl daemon-reload && \
