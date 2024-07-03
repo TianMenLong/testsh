@@ -46,6 +46,10 @@ function install_node() {
     cd $HOME
     git clone https://github.com/airchains-network/wasm-station.git
     git clone https://github.com/airchains-network/tracks.git
+
+    # 确保加载环境变量
+    source ~/.bashrc
+
     cd wasm-station
     go mod tidy
     /bin/bash ./scripts/local-setup.sh
