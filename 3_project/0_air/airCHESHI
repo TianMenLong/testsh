@@ -269,8 +269,9 @@ function view_stationd_logs() {
                 for i in {1..3}; do
                     go run cmd/main.go rollback
                 done
-                sudo systemctl restart stationd
-                echo "回滚操作完成，stationd服务已重启。"
+                echo "回滚操作完成，重新启动 stationd 服务..."
+                sudo systemctl start stationd
+                echo "stationd 服务已重启。"
                 break
             fi
         fi
