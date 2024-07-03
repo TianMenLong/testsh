@@ -187,30 +187,8 @@ EOF
     sudo tee spam.sh > /dev/null << EOF
 #!/bin/bash
 
-# 计数器初始化
-block_counter=0
-
 while true; do
   $HOME/wasm-station/build/wasmstationd tx bank send node ${addr} 1stake --from node --chain-id station-1 --keyring-backend test -y
-
-  # 检查日志文件中的 "New Block Found" 输出
-  if journalctl -u stationd -n 10 | grep -q "New Block Found"; then
-    block_counter=\$((block_counter + 1))
-  else
-    block_counter=0
-  fi
-
-  # 如果计数器达到10，则执行回滚操作
-  if [ \$block_counter -ge 10 ]; then
-    sudo systemctl stop stationd
-    cd \$HOME/tracks
-    go run cmd/main.go rollback
-    go run cmd/main.go rollback
-    go run cmd/main.go rollback
-    sudo systemctl restart stationd
-    block_counter=0
-  fi
-
   sleep ${delay_time}  # Add a sleep to avoid overwhelming the system or network
 done
 EOF
