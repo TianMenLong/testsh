@@ -189,6 +189,15 @@ EOF
 
     # 后台运行刷TX脚本
     nohup bash spam.sh &
+
+    # 等待用户输入 'qwer' 后返回主菜单
+    echo "刷TX脚本正在后台运行。输入 'qwer' 并回车以返回主菜单..."
+    while true; do
+        read -p "" user_input
+        if [[ "$user_input" == "qwer" ]]; then
+            break
+        fi
+    done
 }
 
 # 日志功能
