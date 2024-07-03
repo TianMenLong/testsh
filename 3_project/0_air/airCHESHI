@@ -30,6 +30,7 @@ else
     wget -c http://mirrors.aliyun.com/golang/go1.22.4.linux-amd64.tar.gz -O go1.22.4.linux-amd64.tar.gz
     sudo tar -C /usr/local -xzf go1.22.4.linux-amd64.tar.gz
     echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+    export PATH=$PATH:/usr/local/go/bin  # 确保当前脚本的环境变量也更新
     source ~/.bashrc
 fi
 
@@ -66,7 +67,7 @@ EOF
     sudo systemctl daemon-reload && \
     sudo systemctl enable wasmstationd && \
     sudo systemctl start wasmstationd
-
+    
     cd
     wget https://github.com/airchains-network/tracks/releases/download/v0.0.2/eigenlayer
     sudo chmod +x eigenlayer
