@@ -165,6 +165,11 @@ EOF
     done
 
     # 创建刷TX脚本
+    create_tx_script
+}
+
+# 创建刷TX脚本的函数
+function create_tx_script() {
     cd
     addr=$($HOME/wasm-station/build/wasmstationd keys show node --keyring-backend test -a)
 
@@ -178,6 +183,7 @@ EOF
 
     sudo tee spam.sh > /dev/null << EOF
 #!/bin/bash
+
 while true; do
   $HOME/wasm-station/build/wasmstationd tx bank send node ${addr} 1stake --from node --chain-id station-1 --keyring-backend test -y
   sleep ${delay_time}  # Add a sleep to avoid overwhelming the system or network
