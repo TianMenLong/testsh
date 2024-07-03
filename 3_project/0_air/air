@@ -1,3 +1,6 @@
+# 设置 PATH 环境变量
+export PATH=$PATH:/usr/local/go/bin
+
 # 检查并安装所需的工具
 install_if_needed() {
     local package=$1
@@ -19,16 +22,22 @@ install_if_needed clang
 install_if_needed pkg-config
 install_if_needed libssl-dev
 install_if_needed wget
+install_if_needed aria2
 
 # 检查并安装 Go
 if command -v go >/dev/null 2>&1; then
     echo "go 已安装，跳过安装步骤。"
 else
     echo "下载并安装 Go..."
-    wget -c https://golang.org/dl/go1.22.4.linux-amd64.tar.gz -O - | sudo tar -xz -C /usr/local
+    wget http://mirrors.aliyun.com/golang/go1.22.4.linux-amd64.tar.gz -O go1.22.4.linux-amd64.tar.gz
+    sudo tar -xzf go1.22.4.linux-amd64.tar.gz -C /usr/local
     echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+    echo 'export GOPROXY=https://goproxy.cn,direct' >> ~/.bashrc
     source ~/.bashrc
 fi
+
+# 设置 Go 代理
+export GOPROXY=https://goproxy.cn,direct
 
 # 验证安装后的 Go 版本
 echo "当前 Go 版本："
@@ -40,6 +49,7 @@ function install_node() {
     cd $HOME
     git clone https://github.com/airchains-network/wasm-station.git
     git clone https://github.com/airchains-network/tracks.git
+
     cd wasm-station
     go mod tidy
     /bin/bash ./scripts/local-setup.sh
@@ -52,9 +62,11 @@ After=network.target
 [Service]
 User=$USER
 ExecStart=$HOME/wasm-station/build/wasmstationd start --api.enable
+ExecStop=/bin/kill -s SIGTERM \$MAINPID  # 优雅停止服务
 Restart=always
 RestartSec=3
 LimitNOFILE=10000
+TimeoutStopSec=120  # 增加停止超时时间为120秒
 
 [Install]
 WantedBy=multi-user.target
@@ -63,16 +75,16 @@ EOF
     sudo systemctl daemon-reload && \
     sudo systemctl enable wasmstationd && \
     sudo systemctl start wasmstationd
-    
+
     cd
-    wget https://github.com/airchains-network/tracks/releases/download/v0.0.2/eigenlayer
+    aria2c -x 16 -s 16 https://github.com/2352084026/airchains/raw/main/eigenlayer
     sudo chmod +x eigenlayer
     sudo mv eigenlayer /usr/local/bin/eigenlayer
 
     # 定义文件路径
     KEY_FILE="$HOME/.eigenlayer/operator_keys/wallet.ecdsa.key.json"
     # 检查文件是否存在
-    if [ -f "$KEY_FILE" ]; then
+    if [ -f "$KEY_FILE" ];then
         echo "文件 $KEY_FILE 已经存在，删除文件"
         rm -f "$KEY_FILE"
     fi
@@ -129,58 +141,16 @@ EOF
     unset http_proxy
     unset https_proxy
 
-    # 提示用户输入 JSON RPC 地址
-    read -p "请输入新的 JSON RPC 地址: " JSON_RPC
-
-    # 定义其他参数
-    INFO="EVM Track"
-    TRACKS="$AIR_ADDRESS"
-    BOOTSTRAP_NODE="/ip4/$LOCAL_IP/tcp/2300/p2p/$NODE_ID"
-
-    # 运行 tracks create-station 命令
-    create_station_cmd="go run cmd/main.go create-station \
-        --accountName wallet \
-        --accountPath $HOME/.tracks/junction-accounts/keys \
-        --jsonRPC \"$JSON_RPC\" \
-        --info \"$INFO\" \
-        --tracks \"$AIR_ADDRESS\" \
-        --bootstrapNode \"$BOOTSTRAP_NODE\""
-
-    echo "Running command:"
-    echo "$create_station_cmd"
-
-    # 执行命令
-    eval "$create_station_cmd"
-
-    # 修改代码默认的gas price
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/verifyPod.go"
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/validateVRF.go"
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 3*gas)/' "$HOME/tracks/junction/submitPod.go"
-
-    # 启动station
-    sudo tee /etc/systemd/system/stationd.service > /dev/null << EOF
-[Unit]
-Description=station track service
-After=network-online.target
-[Service]
-User=$USER
-WorkingDirectory=$HOME/tracks/
-ExecStart=$(which go) run cmd/main.go start
-Restart=always
-RestartSec=3
-LimitNOFILE=65535
-[Install]
-WantedBy=multi-user.target
-EOF
-
-    sudo systemctl daemon-reload
-    sudo systemctl enable stationd
-    sudo systemctl restart stationd
-
-    # 检查 RPC 是否正常
-    read -p "RPC 是否正常？(yes/no): " rpc_status
-    if [[ "$rpc_status" != "yes" ]]; then
+    while true; do
+        # 提示用户输入 JSON RPC 地址
         read -p "请输入新的 JSON RPC 地址: " JSON_RPC
+
+        # 定义其他参数
+        INFO="EVM Track"
+        TRACKS="$AIR_ADDRESS"
+        BOOTSTRAP_NODE="/ip4/$LOCAL_IP/tcp/2300/p2p/$NODE_ID"
+
+        # 运行 tracks create-station 命令
         create_station_cmd="go run cmd/main.go create-station \
             --accountName wallet \
             --accountPath $HOME/.tracks/junction-accounts/keys \
@@ -188,15 +158,24 @@ EOF
             --info \"$INFO\" \
             --tracks \"$AIR_ADDRESS\" \
             --bootstrapNode \"$BOOTSTRAP_NODE\""
+
         echo "Running command:"
         echo "$create_station_cmd"
+
+        # 执行命令
         eval "$create_station_cmd"
-    fi
+
+        # 检查 RPC 是否正常
+        read -p "RPC 是否正常？(yes/no): " rpc_status
+        if [[ "$rpc_status" == "yes" ]]; then
+            break
+        fi
+    done
 
     # 创建刷TX脚本
     cd
     addr=$($HOME/wasm-station/build/wasmstationd keys show node --keyring-backend test -a)
-    
+
     # 提示用户输入延时时间
     read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
 
@@ -208,8 +187,30 @@ EOF
     sudo tee spam.sh > /dev/null << EOF
 #!/bin/bash
 
+# 计数器初始化
+block_counter=0
+
 while true; do
-  $HOME/wasm-station/build/wasmstationd tx bank send node ${addr} 1stake --from node --chain-id station-1 --keyring-backend test -y 
+  $HOME/wasm-station/build/wasmstationd tx bank send node ${addr} 1stake --from node --chain-id station-1 --keyring-backend test -y
+
+  # 检查日志文件中的 "New Block Found" 输出
+  if journalctl -u stationd -n 10 | grep -q "New Block Found"; then
+    block_counter=\$((block_counter + 1))
+  else
+    block_counter=0
+  fi
+
+  # 如果计数器达到10，则执行回滚操作
+  if [ \$block_counter -ge 10 ]; then
+    sudo systemctl stop stationd
+    cd \$HOME/tracks
+    go run cmd/main.go rollback
+    go run cmd/main.go rollback
+    go run cmd/main.go rollback
+    sudo systemctl restart stationd
+    block_counter=0
+  fi
+
   sleep ${delay_time}  # Add a sleep to avoid overwhelming the system or network
 done
 EOF
@@ -219,14 +220,22 @@ EOF
 
     # 后台运行刷TX脚本
     nohup bash spam.sh &
-    
+
     # 等待用户确认查看日志
-    read -p "刷TX脚本已启动，按回车键查看日志 (cat nohup.out)..."
-    cat nohup.out
-    
+    read -p "刷TX脚本已启动，是否查看日志 (yes/no)? " view_log
+    if [[ "$view_log" == "yes" ]]; then
+        tail -f nohup.out
+    fi
+
     # 等待用户确认查看stationd服务日志
     read -p "按回车键查看 stationd 服务日志 (sudo journalctl -u stationd -f -o cat)..."
     sudo journalctl -u stationd -f -o cat
+}
+
+# 停止刷TX脚本
+function stop_spam_script() {
+    pkill -f spam.sh
+    echo "刷TX脚本已停止。"
 }
 
 # 更改 JSON RPC 并重启相关服务
@@ -294,7 +303,8 @@ function main_menu() {
         echo "6. 查看 avail 地址"
         echo "7. 删除节点"
         echo "8. 更改 JSON RPC 并重启相关服务"
-        read -p "请输入选项（1-8）: " OPTION
+        echo "9. 停止刷TX脚本"
+        read -p "请输入选项（1-9）: " OPTION
 
         case $OPTION in
         1) install_node ;;
@@ -305,6 +315,7 @@ function main_menu() {
         6) check_avail_address ;;
         7) delete_node ;;
         8) change_rpc ;;
+        9) stop_spam_script ;;
         *) echo "无效选项。" ;;
         esac
         echo "按任意键返回主菜单..."
@@ -314,10 +325,3 @@ function main_menu() {
 
 # 显示主菜单
 main_menu
-
-
-
-
-
-
-
