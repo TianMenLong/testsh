@@ -40,15 +40,15 @@ export GOPROXY=https://goproxy.cn,direct
 echo "当前 Go 版本："
 go version
 
+# 设置 PATH 环境变量
+export PATH=$PATH:/usr/local/go/bin
+
 # 安装节点
 function install_node() {
     sudo apt-get update && sudo apt-get install jq build-essential -y
     cd $HOME
     git clone https://github.com/airchains-network/wasm-station.git
     git clone https://github.com/airchains-network/tracks.git
-
-    # 确保加载环境变量
-    source ~/.bashrc
 
     cd wasm-station
     go mod tidy
