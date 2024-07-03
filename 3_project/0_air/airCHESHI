@@ -196,15 +196,17 @@ EOF
     # 确保脚本有执行权限
     chmod +x spam.sh
 
-    # 后台运行刷TX脚本
-    nohup bash spam.sh &
+# 后台运行刷TX脚本
+nohup bash spam.sh &
 
-    # 手动查看日志
-    echo "刷TX脚本已启动，手动查看日志："
-    echo "cat nohup.out"
-
-    echo "手动查看 stationd 服务日志："
-    echo "sudo journalctl -u stationd -f -o cat"
+# 提示用户手动查看日志
+echo "刷TX脚本已启动，请手动输入以下命令查看日志："
+echo "查看刷TX脚本日志： cat nohup.out"
+echo "按回车键查看 stationd 服务日志..."
+read -n 1
+echo "查看 stationd 服务日志： sudo journalctl -u stationd -f -o cat"
+echo "查看完日志后按 Ctrl+C 退出查看，按任意键继续..."
+read -n 1
 }
 
 # 停止刷TX脚本
