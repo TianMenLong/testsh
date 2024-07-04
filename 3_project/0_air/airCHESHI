@@ -42,8 +42,12 @@ go version
 function install_node() {
     sudo apt-get update && sudo apt-get install jq build-essential -y
     cd $HOME
-    git clone https://github.com/airchains-network/wasm-station.git
-    git clone https://github.com/airchains-network/tracks.git
+    if [ ! -d "$HOME/wasm-station" ]; then
+        git clone https://github.com/airchains-network/wasm-station.git
+    fi
+    if [ ! -d "$HOME/tracks" ]; then
+        git clone https://github.com/airchains-network/tracks.git
+    fi
     cd wasm-station
     go mod tidy
     /bin/bash ./scripts/local-setup.sh
@@ -86,6 +90,10 @@ EOF
 
     sudo rm -rf ~/.tracks
     cd $HOME/tracks || { echo "tracks 目录不存在，克隆操作可能失败。"; exit 1; }
+    if [ ! -f "go.mod" ]; then
+        echo "go.mod 文件不存在，请检查tracks仓库是否正确克隆。"
+        exit 1
+    fi
     go mod tidy
 
     # 询问用户是否要导入钱包
