@@ -257,7 +257,7 @@ function monitor_stationd_logs() {
 
     echo "监控 stationd 服务的实时日志..."
     sudo journalctl -u stationd -f -o cat | awk -v last_restart_time="$last_restart_time" -v restart_interval="$restart_interval" '
-    /INF New Block Found module=blocksync/ {
+    / New Block Found=blocksync/ {
         block_count++;
         if (block_count >= 15) {
             print "检测到连续15条INF New Block Found module=blocksync日志，重启stationd服务...";
