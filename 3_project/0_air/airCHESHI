@@ -254,9 +254,10 @@ EOF
 function monitor_stationd_logs() {
     local last_restart_time=0
     local restart_interval=300  # 5分钟间隔，防止频繁重启
+    local last_rollback_time=0  # 上次回滚的时间
 
     echo "监控 stationd 服务的实时日志..."
-    sudo journalctl -u stationd -f -o cat | awk -v last_restart_time="$last_restart_time" -v restart_interval="$restart_interval" '
+    sudo journalctl -u stationd -f -o cat | awk -v last_restart_time="$last_restart_time" -v restart_interval="$restart_interval" -v last_rollback_time="$last_rollback_time" '
     /New Block Found/ {
         block_count++;
         if (block_count >= 15) {
@@ -269,11 +270,28 @@ function monitor_stationd_logs() {
         block_count = 0;
     }
     /ERROR_STRING/ {
-        print "检测到错误日志，停止 stationd 服务并执行回滚操作...";
-        system("sudo systemctl stop stationd");
-        system("cd '"$HOME"'/tracks && go run cmd/main.go rollback && go run cmd/main.go rollback && go run cmd/main.go rollback");
-        system("sudo systemctl restart stationd");
-        system("sudo journalctl -u stationd -f -o cat");
+        current_time = systime();
+        if ((current_time - last_rollback_time) > restart_interval) {
+            print "检测到错误日志，停止 stationd 服务并执行回滚操作...";
+            system("sudo systemctl stop stationd");
+            system("cd '"$HOME"'/tracks && go run cmd/main.go rollback && go run cmd/main.go rollback && go run cmd/main.go rollback");
+            system("sudo systemctl restart stationd");
+            last_rollback_time = current_time;
+        } else {
+            print "检测到错误日志，但回滚间隔时间不足，跳过回滚。";
+        }
+    }
+    /rpc error: code/ {
+        current_time = systime();
+        if ((current_time - last_rollback_time) > restart_interval) {
+            print "检测到 rpc error: code 错误，停止 stationd 服务并执行回滚操作...";
+            system("sudo systemctl stop stationd");
+            system("cd '"$HOME"'/tracks && go run cmd/main.go rollback && go run cmd/main.go rollback && go run cmd/main.go rollback");
+            system("sudo systemctl restart stationd");
+            last_rollback_time = current_time;
+        } else {
+            print "检测到 rpc error: code 错误，但回滚间隔时间不足，跳过回滚。";
+        }
     }
     /error/ {
         print "检测到错误关键词，重新启动 stationd 服务...";
