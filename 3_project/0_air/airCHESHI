@@ -213,15 +213,6 @@ EOF
     nohup bash spam.sh &
 }
 
-# 增加gas的函数
-function increase_gas(){
-    echo "增加gas费用..."
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", int(1.5*float64(gas)))/' "$HOME/tracks/junction/verifyPod.go"
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", int(1.5*float64(gas)))/' "$HOME/tracks/junction/validateVRF.go"
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", int(1.5*float64(gas)))/' "$HOME/tracks/junction/submitPod.go"
-    echo "gas费用增加完毕。"
-}
-
 # 新增的stationd服务配置和启动部分
 function setup_stationd_service() {
     # 检查工作目录是否存在，不存在则创建
@@ -284,11 +275,32 @@ function monitor_stationd_logs() {
     }
     /error code: .13. msg: .insufficient fees/ {
         print "检测到insufficient fees错误，增加gas费用并重启stationd服务...";
-        system("increase_gas");
+        system("increase_gas_by_log");
         system("sudo systemctl restart stationd");
     }
     { print }
     '
+}
+
+# 增加 gas 费用的函数
+function increase_gas_by_log() {
+    local log_file="/var/log/syslog"  # 根据实际情况调整日志文件路径
+    local got_fee=$(grep -oP "got: \K[0-9]+amf" "$log_file" | tail -1)
+    local required_fee=$(grep -oP "required: \K[0-9]+amf" "$log_file" | tail -1)
+
+    if [[ -n "$got_fee" && -n "$required_fee" ]]; then
+        local got_value=$(echo "$got_fee" | grep -oP "[0-9]+")
+        local required_value=$(echo "$required_fee" | grep -oP "[0-9]+")
+        local new_got_value=$((got_value + (required_value - got_value) + 100))
+        
+        sed -i "s/gasFees := fmt.Sprintf(\"%damf\", $got_value)/gasFees := fmt.Sprintf(\"%damf\", $new_got_value)/" "$HOME/tracks/junction/verifyPod.go"
+        sed -i "s/gasFees := fmt.Sprintf(\"%damf\", $got_value)/gasFees := fmt.Sprintf(\"%damf\", $new_got_value)/" "$HOME/tracks/junction/validateVRF.go"
+        sed -i "s/gasFees := fmt.Sprintf(\"%damf\", $got_value)/gasFees := fmt.Sprintf(\"%damf\", $new_got_value)/" "$HOME/tracks/junction/submitPod.go"
+
+        echo "已将gas费用增加到$new_got_value amf"
+    else
+        echo "未能提取到got和required的费用信息"
+    fi
 }
 
 # 删除节点
