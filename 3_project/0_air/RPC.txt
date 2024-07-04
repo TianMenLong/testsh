@@ -1,0 +1,5 @@
+https://t-airchains.rpc.utsa.tech/
+https://junction-testnet-rpc.synergynodes.com/
+https://airchains-rpc.kubenode.xyz/
+https://junction-testnet-rpc.synergynodes.com/
+https://airchains-rpc.tws.im/
