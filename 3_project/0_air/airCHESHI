@@ -85,7 +85,7 @@ EOF
     echo "123" | eigenlayer operator keys create --key-type ecdsa --insecure wallet
 
     sudo rm -rf ~/.tracks
-    cd $HOME/tracks
+    cd $HOME/tracks || { echo "tracks 目录不存在，克隆操作可能失败。"; exit 1; }
     go mod tidy
 
     # 询问用户是否要导入钱包
@@ -217,9 +217,10 @@ After=network-online.target
 User=$USER
 WorkingDirectory=$HOME/tracks/
 Environment="PATH=$PATH:/usr/local/go/bin"
+ExecStartPre=/bin/sleep 10
 ExecStart=/usr/local/go/bin/go run cmd/main.go start
 Restart=always
-RestartSec=3
+RestartSec=10
 LimitNOFILE=65535
 
 [Install]
