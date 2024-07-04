@@ -252,8 +252,11 @@ EOF
 
 # 监控stationd服务日志的函数
 function monitor_stationd_logs() {
+    local last_restart_time=0
+    local restart_interval=300  # 5分钟间隔，防止频繁重启
+
     echo "监控 stationd 服务的实时日志..."
-    sudo journalctl -u stationd -f -o cat | awk '
+    sudo journalctl -u stationd -f -o cat | awk -v last_restart_time="$last_restart_time" -v restart_interval="$restart_interval" '
     /INF New Block Found module=blocksync/ {
         block_count++;
         if (block_count >= 15) {
@@ -274,9 +277,15 @@ function monitor_stationd_logs() {
         system("sudo systemctl restart stationd");
     }
     /error code: .13. msg: .insufficient fees/ {
-        print "检测到insufficient fees错误，增加gas费用并重启stationd服务...";
-        system("increase_gas_by_log");
-        system("sudo systemctl restart stationd");
+        current_time = systime();
+        if ((current_time - last_restart_time) > restart_interval) {
+            print "检测到insufficient fees错误，增加gas费用并重启stationd服务...";
+            system("increase_gas_by_log");
+            system("sudo systemctl restart stationd");
+            last_restart_time = current_time;
+        } else {
+            print "检测到insufficient fees错误，但重启间隔时间不足，跳过重启。";
+        }
     }
     { print }
     '
@@ -349,7 +358,7 @@ function restart() {
 
 function setgas(){
     sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 10*gas)/' "$HOME/tracks/junction/verifyPod.go"
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 11*gas)/' "$HOME/tracks/junction/validateVRF.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 10*gas)/' "$HOME/tracks/junction/validateVRF.go"
     sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 15*gas)/' "$HOME/tracks/junction/submitPod.go"
     echo "设置gas"
 }
