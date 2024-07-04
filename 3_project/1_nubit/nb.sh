@@ -189,6 +189,8 @@ fi
 
     echo '====================== 安装完成,请退出脚本后执行 source $HOME/.bash_profile 以加载环境变量 ==========================='
 
+
+    savepath
 }
 
 # 查看Nubit 服务状态
@@ -228,18 +230,13 @@ function savepath(){
 function main_menu() {
     while true; do
         clear
-        echo "脚本以及教程由推特用户大赌哥 @y95277777 编写，免费开源，请勿相信收费"
-        echo "============================nubit节点安装===================================="
-        echo "节点社区 Discord 社群:https://discord.gg/GbMV5EcNWF"
-        echo "退出脚本，请按键盘ctrl c退出即可"
-        echo "请选择要执行的操作:"
-        echo "1. 安装节点"
-        echo "2. 查看节点同步状态"
-        echo "3. 查看当前服务状态"
-        echo "4. 查看钱包地址"
-        echo "5. 查看pubkey"
-        echo "6. 显示钱包助记词"
-        echo "7.保存变量********安装完之后执行********）"
+        echo "1. install"
+        echo "2. node synchronization status"
+        echo "3. server status"
+        echo "4. Wallet Address"
+        echo "5. Waller pubkey"
+        echo "6. word"
+        echo "7. savepath"
         read -p "请输入选项（1-6）: " OPTION
 
         case $OPTION in
@@ -250,9 +247,9 @@ function main_menu() {
         5) check_pubkey ;;
         6) export_mnemonic ;;
         7) savepath ;;
-        *) echo "无效选项。" ;;
+        *) echo "invalid。" ;;
         esac
-        echo "按任意键返回主菜单..."
+        echo "Press any key to return to the main menu"
         read -n 1
     done
     
