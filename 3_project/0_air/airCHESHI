@@ -234,6 +234,7 @@ ExecStart=/usr/local/go/bin/go run cmd/main.go start
 Restart=always
 RestartSec=10
 LimitNOFILE=65535
+TimeoutStopSec=60
 
 [Install]
 WantedBy=multi-user.target
@@ -262,7 +263,14 @@ function monitor_stationd_logs() {
         }
     }
     /ERROR_STRING/ {
-        print "检测到错误日志，停止stationd服务并执行重启操作...";
+        print "检测到错误日志，停止stationd服务并执行回滚操作...";
+        system("sudo systemctl stop stationd");
+        system("cd '"$HOME"'/tracks && go run cmd/main.go rollback && go run cmd/main.go rollback && go run cmd/main.go rollback");
+        system("sudo systemctl restart stationd");
+        system("sudo journalctl -u stationd -f -o cat");
+    }
+    /error/ {
+        print "检测到错误关键词，重新启动stationd服务...";
         system("sudo systemctl restart stationd");
     }
     { print }
@@ -314,9 +322,9 @@ function restart() {
 }
 
 function setgas(){
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/verifyPod.go"
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/validateVRF.go"
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 3*gas)/' "$HOME/tracks/junction/submitPod.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/verifyPod.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/validateVRF.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 7*gas)/' "$HOME/tracks/junction/submitPod.go"
     echo "设置gas"
 }
 
