@@ -262,9 +262,7 @@ function monitor_stationd_logs() {
         }
     }
     /ERROR_STRING/ {
-        print "检测到错误日志，停止stationd服务并执行回滚操作...";
-        system("sudo systemctl stop stationd");
-        system("cd $HOME/tracks && go run cmd/main.go rollback && go run cmd/main.go rollback && go run cmd/main.go rollback");
+        print "检测到错误日志，停止stationd服务并执行重启操作...";
         system("sudo systemctl restart stationd");
     }
     { print }
