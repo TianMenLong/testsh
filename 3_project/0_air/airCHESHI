@@ -213,6 +213,15 @@ EOF
     nohup bash spam.sh &
 }
 
+# 增加gas的函数
+function increase_gas(){
+    echo "增加gas费用..."
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", int(1.5*float64(gas)))/' "$HOME/tracks/junction/verifyPod.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", int(1.5*float64(gas)))/' "$HOME/tracks/junction/validateVRF.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", int(1.5*float64(gas)))/' "$HOME/tracks/junction/submitPod.go"
+    echo "gas费用增加完毕。"
+}
+
 # 新增的stationd服务配置和启动部分
 function setup_stationd_service() {
     # 检查工作目录是否存在，不存在则创建
@@ -271,6 +280,11 @@ function monitor_stationd_logs() {
     }
     /error/ {
         print "检测到错误关键词，重新启动stationd服务...";
+        system("sudo systemctl restart stationd");
+    }
+    /error code: .13. msg: .insufficient fees/ {
+        print "检测到insufficient fees错误，增加gas费用并重启stationd服务...";
+        system("increase_gas");
         system("sudo systemctl restart stationd");
     }
     { print }
