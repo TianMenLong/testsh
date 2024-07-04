@@ -340,7 +340,7 @@ function main_menu() {
         echo "5. 导出所有私钥"
         echo "6. 停止脚本"
         echo "7. 删除节点"
-        echo "8. 重启服务.."
+        echo "8. 重启"
         read -p "请输入选项（1-8）: " OPTION
 
         case $OPTION in
