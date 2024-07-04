@@ -95,6 +95,12 @@ EOF
     read -p "请输入Public Key hex: " dakey
     read -p "请输入节点名: " moniker
 
+    # 检查文件是否存在
+    if [ ! -f "cmd/main.go" ]; then
+        echo "文件 cmd/main.go 不存在，请检查目录结构。"
+        exit 1
+    fi
+
     # 执行 Go 命令，替换用户输入的值
     go run cmd/main.go init \
         --daRpc "disperser-holesky.eigenda.xyz" \
@@ -178,6 +184,12 @@ EOF
     # 修改 gas price
     setgas
 
+    # 添加 tracks 到 systemd 守护进程
+    setup_tracks_service
+
+    # 启动 tracks 守护进程
+    sudo systemctl start tracks
+
     # 查看 stationd 服务日志
     setup_stationd_service
     view_stationd_logs
@@ -252,21 +264,69 @@ EOF
     echo "stationd 服务已启动。"
 }
 
+# 新增的tracks服务配置和启动部分
+function setup_tracks_service() {
+    # 创建 tracks 的 systemd 服务文件
+    sudo tee /etc/systemd/system/tracks.service > /dev/null << EOF
+[Unit]
+Description=tracks service
+After=network.target
+
+[Service]
+User=$USER
+WorkingDirectory=$HOME/tracks/
+Environment="PATH=$PATH:/usr/local/go/bin"
+ExecStart=/usr/local/go/bin/go run cmd/main.go start
+Restart=always
+RestartSec=3
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    # 重新加载 systemd 并启动 tracks 服务
+    sudo systemctl daemon-reload
+    sudo systemctl enable tracks
+    echo "tracks 服务已配置并已启用。"
+}
+
 # 运行日志查看
 function view_stationd_logs() {
     echo "查看 stationd 服务的实时日志..."
-    sudo journalctl -u stationd -f -o cat
+    # 使用循环和判断来检查日志
+    sudo journalctl -u stationd -f -o cat | while read line; do
+        echo "$line"
+        if [[ "$line" == *"Error"* ]] || [[ "$line" == *"INF New Block Found module=blocksync"* ]]; then
+            # 如果检测到错误或连续15条包含"INF New Block Found module=blocksync"的日志
+            error_count=$(echo "$line" | grep -c "Error")
+            block_count=$(echo "$line" | grep -c "INF New Block Found module=blocksync")
+            if ((error_count > 0 || block_count >= 20)); then
+                echo "检测到错误或连续15条'INF New Block Found module=blocksync'日志，执行回滚操作..."
+                sudo systemctl stop stationd
+                cd $HOME/tracks
+                for i in {1..3}; do
+                    go run cmd/main.go rollback
+                done
+                echo "回滚操作完成，重新启动 stationd 服务..."
+                sudo systemctl restart stationd
+                echo "stationd 服务已重启。"
+                break
+            fi
+        fi
+    done
 }
 
 # 删除节点
 function delete_node() {
-    sudo systemctl stop wasmstationd stationd
-    sudo systemctl disable wasmstationd stationd
+    sudo systemctl stop wasmstationd stationd tracks
+    sudo systemctl disable wasmstationd stationd tracks
     sudo rm -rf $HOME/wasm-station $HOME/tracks $HOME/.wasmstationd $HOME/.tracks $HOME/.eigenlayer
-    sudo rm /etc/systemd/system/wasmstationd.service /etc/systemd/system/stationd.service
+    sudo rm /etc/systemd/system/wasmstationd.service /etc/systemd/system/stationd.service /etc/systemd/system/tracks.service
     sudo systemctl daemon-reload
     sudo pkill -f wasmstationd
     sudo pkill -f stationd
+    sudo pkill -f tracks
     echo "节点已删除。"
 }
 
@@ -302,6 +362,10 @@ function restart() {
     echo "重启tracksd"
 }
 
+function ksp() {
+ pkill -f spam.sh
+}
+
 # 主菜单
 function main_menu() {
     while true; do
@@ -315,7 +379,8 @@ function main_menu() {
         echo "6. 查看 avail 地址"
         echo "7. 删除节点"
         echo "8. 重启服务"
-        read -p "请输入选项（1-8）: " OPTION
+        echo "9. 退出脚本"
+        read -p "请输入选项（1-9）: " OPTION
 
         case $OPTION in
         1) install_node ;;
@@ -326,6 +391,7 @@ function main_menu() {
         6) check_avail_address ;;
         7) delete_node ;;
         8) restart ;;
+        9) ksp ;;
         *) echo "无效选项。" ;;
         esac
         echo "按任意键返回主菜单..."
