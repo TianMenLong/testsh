@@ -1,35 +1,35 @@
 #!/bin/bash
 
-# °²×° V2RayA
+# å®‰è£… V2RayA
 function installv2raya() {
     mproxy
 
-    # Ìí¼Ó¹«Ô¿
+    # æ·»åŠ å…¬é’¥
     wget -qO - https://apt.v2raya.org/key/public-key.asc | sudo tee /etc/apt/keyrings/v2raya.asc
 
-    # Ìí¼Ó V2RayA Èí¼şÔ´
+    # æ·»åŠ  V2RayA è½¯ä»¶æº
     echo "deb [signed-by=/etc/apt/keyrings/v2raya.asc] https://apt.v2raya.org/ v2raya main" | sudo tee /etc/apt/sources.list.d/v2raya.list
 
-    # ¸üĞÂÈí¼ş°üÁĞ±í
+    # æ›´æ–°è½¯ä»¶åŒ…åˆ—è¡¨
     sudo apt update
 
-    # °²×° V2RayA ºÍ V2Ray
+    # å®‰è£… V2RayA å’Œ V2Ray
     sudo apt install v2raya v2ray
 
     cproxy
 }
 
-# Æô¶¯ V2RayA ·şÎñ
+# å¯åŠ¨ V2RayA æœåŠ¡
 function startv2raya() {
     sudo systemctl start v2raya.service
 }
 
-# ÉèÖÃ V2RayA ·şÎñ¿ª»ú×ÔÆô
+# è®¾ç½® V2RayA æœåŠ¡å¼€æœºè‡ªå¯
 function setsysenable() {
     sudo systemctl enable v2raya.service
 }
 
-# ÒÆ³ı V2RayA ºÍ V2Ray
+# ç§»é™¤ V2RayA å’Œ V2Ray
 function rmv2rary() {
     sudo apt remove --purge v2raya v2ray
     sudo apt autoremove
@@ -37,55 +37,55 @@ function rmv2rary() {
     sudo rm /etc/apt/keyrings/v2raya.asc
 }
 
-#ĞŞ¸Ä´úÀí
+#ä¿®æ”¹ä»£ç†
 function mproxy(){
-    # ÌáÊ¾ÓÃ»§ÊäÈë´úÀíIP
-    read -p "ÇëÊäÈë´úÀíIPµØÖ·: " proxy_ip
+    # æç¤ºç”¨æˆ·è¾“å…¥ä»£ç†IP
+    read -p "è¯·è¾“å…¥ä»£ç†IPåœ°å€: " proxy_ip
 
-    # ¼ì²éÊäÈëÊÇ·ñÎª¿Õ
+    # æ£€æŸ¥è¾“å…¥æ˜¯å¦ä¸ºç©º
     if [[ -z "$proxy_ip" ]]; then
-      echo "IPµØÖ·²»ÄÜÎª¿Õ"
+      echo "IPåœ°å€ä¸èƒ½ä¸ºç©º"
       exit 1
     fi
 
-    # ¹Ì¶¨¶Ë¿ÚÎª7890
+    # å›ºå®šç«¯å£ä¸º7890
     proxy_port=7890
 
-    # ÉèÖÃ»·¾³±äÁ¿
+    # è®¾ç½®ç¯å¢ƒå˜é‡
     export http_proxy="http://$proxy_ip:$proxy_port"
     export https_proxy="http://$proxy_ip:$proxy_port"
 }
 
-#È¡Ïû´úÀí
+#å–æ¶ˆä»£ç†
 function cproxy(){
     unset http_proxy 
     unset https_proxy
 }
 
-# Ö÷²Ëµ¥
+# ä¸»èœå•
 function main_menu() {
     while true; do
         clear
-        echo "Ä¬ÈÏ¶Ë¿Ú2017:"
-        echo "²Ëµ¥Ñ¡Ïî:"
-        echo "1. °²×°v2ray"
-        echo "2. Æô¶¯v2ray"
-        echo "3. ÉèÖÃ¿ª»ú×Ô¶¯Æô¶¯v2ray"
-        echo "4. ÒÆ³ıv2ray"
+        echo "é»˜è®¤ç«¯å£2017:"
+        echo "èœå•é€‰é¡¹:"
+        echo "1. å®‰è£…v2ray"
+        echo "2. å¯åŠ¨v2ray"
+        echo "3. è®¾ç½®å¼€æœºè‡ªåŠ¨å¯åŠ¨v2ray"
+        echo "4. ç§»é™¤v2ray"
        
-        read -p "ÇëÊäÈëÑ¡Ïî£¨1-4£©: " OPTION
+        read -p "è¯·è¾“å…¥é€‰é¡¹ï¼ˆ1-4ï¼‰: " OPTION
 
         case $OPTION in
         1) installv2raya ;;
         2) startv2raya ;;
         3) setsysenable ;;
         4) rmv2rary ;;
-        *) echo "ÎŞĞ§Ñ¡Ïî¡£" ;;
+        *) echo "æ— æ•ˆé€‰é¡¹ã€‚" ;;
         esac
-        echo "°´ÈÎÒâ¼ü·µ»ØÖ÷²Ëµ¥..."
+        echo "æŒ‰ä»»æ„é”®è¿”å›ä¸»èœå•..."
         read -n 1
     done
 }
 
-# ÏÔÊ¾Ö÷²Ëµ¥
+# æ˜¾ç¤ºä¸»èœå•
 main_menu
