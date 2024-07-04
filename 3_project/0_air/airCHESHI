@@ -89,27 +89,28 @@ EOF
     echo "123" | eigenlayer operator keys create --key-type ecdsa --insecure wallet
 
     sudo rm -rf ~/.tracks
-    cd $HOME/tracks || { echo "tracks 目录不存在，克隆操作可能失败。"; exit 1; }
+    cd $HOME/tracks
     if [ ! -f "go.mod" ]; then
         echo "go.mod 文件不存在，请检查tracks仓库是否正确克隆。"
         exit 1
     fi
     go mod tidy
 
-    # 询问用户是否要导入钱包
-    read -p "是否要导入钱包？(y/n): " import_choice
+    # 提示用户输入公钥和节点名
+    read -p "请输入Public Key hex: " dakey
+    read -p "请输入节点名: " moniker
 
-    if [[ "$import_choice" == "y" ]]; then
-        read -p "请输入助记词: " mnemonic
-        echo $mnemonic > $HOME/.tracks/junction-accounts/keys/mnemonic.txt
-        go run cmd/main.go keys import --accountName wallet --accountPath $HOME/.tracks/junction-accounts/keys --mnemonic "$mnemonic"
-        read -p "请输入钱包地址: " AIR_ADDRESS
-    else
-        go run cmd/main.go keys junction --accountName wallet --accountPath $HOME/.tracks/junction-accounts/keys
-        # 从钱包文件中提取 air 开头的钱包地址
-        WALLET_PATH="$HOME/.tracks/junction-accounts/keys/wallet.wallet.json"
-        AIR_ADDRESS=$(jq -r '.address' $WALLET_PATH)
-    fi
+    # 执行 Go 命令，替换用户输入的值
+    go run cmd/main.go init \
+        --daRpc "disperser-holesky.eigenda.xyz" \
+        --daKey "$dakey" \
+        --daType "eigen" \
+        --moniker "$moniker" \
+        --stationRpc "http://127.0.0.1:26657" \
+        --stationAPI "http://127.0.0.1:1317" \
+        --stationType "wasm"
+
+    go run cmd/main.go keys junction --accountName wallet --accountPath $HOME/.tracks/junction-accounts/keys
 
     go run cmd/main.go prover v1WASM
 
@@ -129,6 +130,9 @@ EOF
 
     # 从配置文件中提取 nodeid
     NODE_ID=$(grep 'node_id =' $CONFIG_PATH | awk -F'"' '{print $2}')
+
+    # 从钱包文件中提取 air 开头的钱包地址
+    AIR_ADDRESS=$(jq -r '.address' $WALLET_PATH)
 
     # 获取本机 IP 地址
     LOCAL_IP=$(hostname -I | awk '{print $1}')
@@ -328,7 +332,7 @@ function main_menu() {
         echo "3. 查看 avail 状态"
         echo "4. 查看 tracks 状态"
         echo "5. 导出所有私钥"
-        echo "6. 查看 avail 地址"
+        echo "6. 停止脚本"
         echo "7. 删除节点"
         echo "8. 重启服务"
         read -p "请输入选项（1-8）: " OPTION
@@ -339,7 +343,7 @@ function main_menu() {
         3) avail_log ;;
         4) tracks_log ;;
         5) private_key ;;
-        6) check_avail_address ;;
+        6) sudo killall spam.sh ;;
         7) delete_node ;;
         8) restart ;;
         *) echo "无效选项。" ;;
