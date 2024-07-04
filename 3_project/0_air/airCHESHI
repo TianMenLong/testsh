@@ -257,34 +257,34 @@ function monitor_stationd_logs() {
 
     echo "监控 stationd 服务的实时日志..."
     sudo journalctl -u stationd -f -o cat | awk -v last_restart_time="$last_restart_time" -v restart_interval="$restart_interval" '
-    / New Block Found=blocksync/ {
+    /New Block Found/ {
         block_count++;
         if (block_count >= 15) {
-            print "检测到连续15条INF New Block Found module=blocksync日志，重启stationd服务...";
+            print "检测到连续15条 New Block Found module=blocksync 日志，重启 stationd 服务...";
             system("sudo systemctl restart stationd");
             block_count = 0;
         }
     }
     /ERROR_STRING/ {
-        print "检测到错误日志，停止stationd服务并执行回滚操作...";
+        print "检测到错误日志，停止 stationd 服务并执行回滚操作...";
         system("sudo systemctl stop stationd");
         system("cd '"$HOME"'/tracks && go run cmd/main.go rollback && go run cmd/main.go rollback && go run cmd/main.go rollback");
         system("sudo systemctl restart stationd");
         system("sudo journalctl -u stationd -f -o cat");
     }
     /error/ {
-        print "检测到错误关键词，重新启动stationd服务...";
+        print "检测到错误关键词，重新启动 stationd 服务...";
         system("sudo systemctl restart stationd");
     }
     /error code: .13. msg: .insufficient fees/ {
         current_time = systime();
         if ((current_time - last_restart_time) > restart_interval) {
-            print "检测到insufficient fees错误，增加gas费用并重启stationd服务...";
+            print "检测到 insufficient fees 错误，增加 gas 费用并重启 stationd 服务...";
             system("increase_gas_by_log");
             system("sudo systemctl restart stationd");
             last_restart_time = current_time;
         } else {
-            print "检测到insufficient fees错误，但重启间隔时间不足，跳过重启。";
+            print "检测到 insufficient fees 错误，但重启间隔时间不足，跳过重启。";
         }
     }
     { print }
@@ -306,9 +306,9 @@ function increase_gas_by_log() {
         sed -i "s/gasFees := fmt.Sprintf(\"%damf\", $got_value)/gasFees := fmt.Sprintf(\"%damf\", $new_got_value)/" "$HOME/tracks/junction/validateVRF.go"
         sed -i "s/gasFees := fmt.Sprintf(\"%damf\", $got_value)/gasFees := fmt.Sprintf(\"%damf\", $new_got_value)/" "$HOME/tracks/junction/submitPod.go"
 
-        echo "已将gas费用增加到$new_got_value amf"
+        echo "已将 gas 费用增加到 $new_got_value amf"
     else
-        echo "未能提取到got和required的费用信息"
+        echo "未能提取到 got 和 required 的费用信息"
     fi
 }
 
