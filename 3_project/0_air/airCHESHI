@@ -309,7 +309,7 @@ function view_stationd_logs() {
                     go run cmd/main.go rollback
                 done
                 echo "回滚操作完成，重新启动 stationd 服务..."
-                sudo systemctl start stationd
+                sudo systemctl restart stationd
                 echo "stationd 服务已重启。"
                 break
             fi
