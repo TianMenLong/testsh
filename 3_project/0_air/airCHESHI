@@ -260,7 +260,7 @@ function monitor_stationd_logs() {
     /New Block Found/ {
         block_count++;
         if (block_count >= 15) {
-            print "检测到连续15条 New Block Found module=blocksync 日志，重启 stationd 服务...";
+            print "检测到连续15条 New Block Found 日志，重启 stationd 服务...";
             system("sudo systemctl restart stationd");
             block_count = 0;
         }
