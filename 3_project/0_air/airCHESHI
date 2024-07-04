@@ -265,6 +265,9 @@ function monitor_stationd_logs() {
             block_count = 0;
         }
     }
+    {
+        block_count = 0;
+    }
     /ERROR_STRING/ {
         print "检测到错误日志，停止 stationd 服务并执行回滚操作...";
         system("sudo systemctl stop stationd");
