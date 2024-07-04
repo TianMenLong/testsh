@@ -343,7 +343,7 @@ function main_menu() {
         3) avail_log ;;
         4) tracks_log ;;
         5) private_key ;;
-        6) sudo killall spam.sh ;;
+        6) sudo pkill -f spam.sh ;;
         7) delete_node ;;
         8) restart ;;
         *) echo "无效选项。" ;;
