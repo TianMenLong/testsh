@@ -260,7 +260,7 @@ function monitor_stationd_logs() {
     sudo journalctl -u stationd -f -o cat | awk -v last_restart_time="$last_restart_time" -v restart_interval="$restart_interval" -v last_rollback_time="$last_rollback_time" '
     /New Block Found/ {
         block_count++;
-        if (block_count >= 15) {
+        if (block_count >= 25) {
             print "检测到连续15条 New Block Found 日志，重启 stationd 服务...";
             system("sudo systemctl restart stationd");
             block_count = 0;
