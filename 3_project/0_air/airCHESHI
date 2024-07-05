@@ -94,7 +94,7 @@ EOF
     # 定义文件路径
     KEY_FILE="$HOME/.eigenlayer/operator_keys/wallet.ecdsa.key.json"
     # 检查文件是否存在
-    if [ -f "$KEY_FILE" ]; then
+    if [ -f "$KEY_FILE" ];then
         echo "文件 $KEY_FILE 已经存在，删除文件"
         rm -f "$KEY_FILE"
     fi
@@ -104,7 +104,7 @@ EOF
 
     sudo rm -rf ~/.tracks
     cd $HOME/tracks
-    if [ ! -f "go.mod" ]; then
+    if [ ! -f "go.mod" ];then
         echo "go.mod 文件不存在，请检查tracks仓库是否正确克隆。"
         exit 1
     fi
@@ -131,7 +131,7 @@ EOF
     # 询问用户是否要继续执行
     read -p "是否已经领水完毕要继续执行？(yes/no): " choice
 
-    if [[ "$choice" != "yes" ]]; then
+    if [[ "$choice" != "yes" ]];then
         echo "脚本已终止。"
         exit 0
     fi
@@ -180,7 +180,7 @@ EOF
 
         # 检查 RPC 是否正常
         read -p "RPC 是否正常？(yes/no): " rpc_status
-        if [[ "$rpc_status" == "yes" ]]; then
+        if [[ "$rpc_status" == "yes" ]];then
             break
         fi
     done
@@ -272,52 +272,51 @@ function monitor_stationd_logs() {
     local last_rollback_time=0  # 上次回滚的时间
 
     echo "监控 stationd 服务的实时日志..."
-    tail -f /var/log/stationd.log | awk -v last_restart_time="$last_restart_time" -v restart_interval="$restart_interval" -v last_rollback_time="$last_rollback_time" -v rpc_list="${RPC_LIST[*]}" '
-    /New Block Found/ {
-        block_count++;
-        if (block_count >= 25) {
-            print "检测到连续25条 New Block Found 日志，重启 stationd 服务...";
+    while true; do
+        tail -f /var/log/stationd.log | awk -v last_restart_time="$last_restart_time" -v restart_interval="$restart_interval" -v last_rollback_time="$last_rollback_time" -v rpc_list="${RPC_LIST[*]}" -v JSON_RPC="$JSON_RPC" '
+        /New Block Found/ {
+            block_count++;
+            if (block_count >= 25) {
+                print "检测到连续25条 New Block Found 日志，重启 stationd 服务...";
+                system("sudo systemctl restart stationd");
+                block_count = 0;
+            }
+        }
+        /ERROR_STRING/ {
+            current_time = systime();
+            if ((current_time - last_rollback_time) > restart_interval) {
+                print "检测到错误日志，更换 RPC 地址并停止 stationd 服务...";
+                system("read -r -a rpc_array <<< \"" rpc_list "\"; for rpc in \"${rpc_array[@]}\"; do if [[ \"$rpc\" != \"$JSON_RPC\" ]]; then JSON_RPC=\"$rpc\"; break; fi done;");
+                system("sudo systemctl stop stationd");
+                system("cd $HOME/tracks && go run cmd/main.go rollback && go run cmd/main.go rollback && go run cmd/main.go rollback");
+                system("sudo systemctl restart stationd");
+                last_rollback_time = current_time;
+            } else {
+                print "检测到错误日志，但回滚间隔时间不足，跳过回滚。";
+            }
+        }
+        /rpc error: code/ {
+            current_time = systime();
+            if ((current_time - last_rollback_time) > restart_interval) {
+                print "检测到 rpc error: code 错误，更换 RPC 地址并停止 stationd 服务...";
+                system("read -r -a rpc_array <<< \"" rpc_list "\"; for rpc in \"${rpc_array[@]}\"; do if [[ \"$rpc\" != \"$JSON_RPC\" ]]; then JSON_RPC=\"$rpc\"; break; fi done;");
+                system("sudo systemctl stop stationd");
+                system("cd $HOME/tracks && go run cmd/main.go rollback && go run cmd/main.go rollback && go run cmd/main.go rollback");
+                system("sudo systemctl restart stationd");
+                last_rollback_time = current_time;
+            } else {
+                print "检测到 rpc error: code 错误，但回滚间隔时间不足，跳过回滚。";
+            }
+        }
+        /error/ {
+            print "检测到错误关键词，重新启动 stationd 服务...";
             system("sudo systemctl restart stationd");
+        }
+        {
             block_count = 0;
         }
-    }
-    {
-        block_count = 0;
-    }
-    /ERROR_STRING/ {
-        current_time = systime();
-        if ((current_time - last_rollback_time) > restart_interval) {
-            print "检测到错误日志，更换 RPC 地址并停止 stationd 服务...";
-            system("read -r -a rpc_array <<< \"$rpc_list\"; for rpc in \"${rpc_array[@]}\"; do if [[ \"$rpc\" != \"$JSON_RPC\" ]]; then JSON_RPC=\"$rpc\"; break; fi done;");
-            system("sudo systemctl stop stationd");
-            system("cd '"$HOME"'/tracks && go run cmd/main.go rollback && go run cmd/main.go rollback && go run cmd/main.go rollback");
-            system("sudo systemctl restart stationd");
-            last_rollback_time = current_time;
-        } else {
-            print "检测到错误日志，但回滚间隔时间不足，跳过回滚。";
-        }
-    }
-    /rpc error: code/ {
-        current_time = systime();
-        if ((current_time - last_rollback_time) > restart_interval) {
-            print "检测到 rpc error: code 错误，更换 RPC 地址并停止 stationd 服务...";
-            system("read -r -a rpc_array <<< \"$rpc_list\"; for rpc in \"${rpc_array[@]}\"; do if [[ \"$rpc\" != \"$JSON_RPC\" ]]; then JSON_RPC=\"$rpc\"; break; fi done;");
-            system("sudo systemctl stop stationd");
-            system("cd '"$HOME"'/tracks && go run cmd/main.go rollback && go run cmd/main.go rollback && go run cmd/main.go rollback");
-            system("sudo systemctl restart stationd");
-            last_rollback_time = current_time;
-        } else {
-            print "检测到 rpc error: code 错误，但回滚间隔时间不足，跳过回滚。";
-        }
-    }
-    /error/ {
-        print "检测到错误关键词，重新启动 stationd 服务...";
-        system("sudo systemctl restart stationd");
-    }
-    {
-        block_count = 0;
-    }
-    '
+        '
+    done
 }
 
 # 删除节点
