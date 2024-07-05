@@ -42,7 +42,7 @@ echo "当前 Go 版本："
 go version
 
 # 定义备选 RPC 地址数组
-RPC_LIST=("https://junction-testnet-rpc.synergynodes.com/ " "http://airchains-rpc1.kubenode.xyz:43457/" "https://junction-testnet-rpc.synergynodes.com/" "https://airchains-rpc.kubenode.xyz/" "https://airchains-rpc.tws.im/")
+RPC_LIST=("https://junction-testnet-rpc.synergynodes.com/" "http://airchains-rpc1.kubenode.xyz:43457/" "https://junction-testnet-rpc.synergynodes.com/" "https://airchains-rpc.kubenode.xyz/" "https://airchains-rpc.tws.im/")
 CURRENT_RPC_INDEX=0
 
 # 切换到下一个 RPC 地址
@@ -249,6 +249,8 @@ Restart=always
 RestartSec=10
 LimitNOFILE=65535
 TimeoutStopSec=60
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
@@ -316,7 +318,6 @@ function monitor_stationd_logs() {
 
     '
 }
-
 
 # 删除节点
 function delete_node() {
