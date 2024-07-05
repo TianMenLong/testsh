@@ -272,50 +272,56 @@ function monitor_stationd_logs() {
     local last_rollback_time=0  # 上次回滚的时间
 
     echo "监控 stationd 服务的实时日志..."
-    while true; do
-        tail -f /var/log/stationd.log | awk -v last_restart_time="$last_restart_time" -v restart_interval="$restart_interval" -v last_rollback_time="$last_rollback_time" -v rpc_list="${RPC_LIST[*]}" -v JSON_RPC="$JSON_RPC" '
-        /New Block Found/ {
-            block_count++;
-            if (block_count >= 25) {
-                print "检测到连续25条 New Block Found 日志，重启 stationd 服务...";
-                system("sudo systemctl restart stationd");
-                block_count = 0;
-            }
-        }
-        /ERROR_STRING/ {
-            current_time = systime();
-            if ((current_time - last_rollback_time) > restart_interval) {
-                print "检测到错误日志，更换 RPC 地址并停止 stationd 服务...";
-                system("read -r -a rpc_array <<< \"" rpc_list "\"; for rpc in \"${rpc_array[@]}\"; do if [[ \"$rpc\" != \"$JSON_RPC\" ]]; then JSON_RPC=\"$rpc\"; break; fi done;");
-                system("sudo systemctl stop stationd");
-                system("cd $HOME/tracks && go run cmd/main.go rollback && go run cmd/main.go rollback && go run cmd/main.go rollback");
-                system("sudo systemctl restart stationd");
-                last_rollback_time = current_time;
-            } else {
-                print "检测到错误日志，但回滚间隔时间不足，跳过回滚。";
-            }
-        }
-        /rpc error: code/ {
-            current_time = systime();
-            if ((current_time - last_rollback_time) > restart_interval) {
-                print "检测到 rpc error: code 错误，更换 RPC 地址并停止 stationd 服务...";
-                system("read -r -a rpc_array <<< \"" rpc_list "\"; for rpc in \"${rpc_array[@]}\"; do if [[ \"$rpc\" != \"$JSON_RPC\" ]]; then JSON_RPC=\"$rpc\"; break; fi done;");
-                system("sudo systemctl stop stationd");
-                system("cd $HOME/tracks && go run cmd/main.go rollback && go run cmd/main.go rollback && go run cmd/main.go rollback");
-                system("sudo systemctl restart stationd");
-                last_rollback_time = current_time;
-            } else {
-                print "检测到 rpc error: code 错误，但回滚间隔时间不足，跳过回滚。";
-            }
-        }
-        /error/ {
-            print "检测到错误关键词，重新启动 stationd 服务...";
-            system("sudo systemctl restart stationd");
-        }
-        {
-            block_count = 0;
-        }
-        '
+    journalctl -u stationd -f | while read -r line; do
+        if echo "$line" | grep -q "New Block Found"; then
+            block_count=$((block_count+1))
+            if [ "$block_count" -ge 25 ]; then
+                echo "检测到连续25条 New Block Found 日志，重启 stationd 服务..."
+                sudo systemctl restart stationd
+                block_count=0
+            fi
+        else
+            block_count=0
+        fi
+
+        if echo "$line" | grep -q "ERROR_STRING"; then
+            current_time=$(date +%s)
+            if [ $((current_time - last_rollback_time)) -gt $restart_interval ]; then
+                echo "检测到错误日志，更换 RPC 地址并停止 stationd 服务..."
+                switch_rpc
+                sudo systemctl stop stationd
+                cd $HOME/tracks
+                go run cmd/main.go rollback
+                go run cmd/main.go rollback
+                go run cmd/main.go rollback
+                sudo systemctl restart stationd
+                last_rollback_time=$current_time
+            else
+                echo "检测到错误日志，但回滚间隔时间不足，跳过回滚。"
+            fi
+        fi
+
+        if echo "$line" | grep -q "rpc error: code"; then
+            current_time=$(date +%s)
+            if [ $((current_time - last_rollback_time)) -gt $restart_interval ]; then
+                echo "检测到 rpc error: code 错误，更换 RPC 地址并停止 stationd 服务..."
+                switch_rpc
+                sudo systemctl stop stationd
+                cd $HOME/tracks
+                go run cmd/main.go rollback
+                go run cmd/main.go rollback
+                go run cmd/main.go rollback
+                sudo systemctl restart stationd
+                last_rollback_time=$current_time
+            else
+                echo "检测到 rpc error: code 错误，但回滚间隔时间不足，跳过回滚。"
+            fi
+        fi
+
+        if echo "$line" | grep -q "error"; then
+            echo "检测到错误关键词，重新启动 stationd 服务..."
+            sudo systemctl restart stationd
+        fi
     done
 }
 
@@ -419,7 +425,8 @@ function main_menu() {
         echo "10. 重启"
         echo "11. 重启 stationd"
         echo "12. 回滚 stationd"
-        read -p "请输入选项（1-12）: " OPTION
+        echo "13. 更换 RPC 地址"
+        read -p "请输入选项（1-13）: " OPTION
 
         case $OPTION in
         1) install_node ;;
@@ -434,6 +441,7 @@ function main_menu() {
         10) restart ;;
         11) restart_stationd ;;
         12) rollback_stationd ;;
+        13) switch_rpc ;;
         *) echo "无效选项。" ;;
         esac
         echo "按任意键返回主菜单..."
