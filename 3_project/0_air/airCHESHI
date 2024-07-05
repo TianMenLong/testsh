@@ -94,7 +94,7 @@ EOF
     # 定义文件路径
     KEY_FILE="$HOME/.eigenlayer/operator_keys/wallet.ecdsa.key.json"
     # 检查文件是否存在
-    if [ -f "$KEY_FILE" ];then
+    if [ -f "$KEY_FILE" ]; then
         echo "文件 $KEY_FILE 已经存在，删除文件"
         rm -f "$KEY_FILE"
     fi
@@ -104,7 +104,7 @@ EOF
 
     sudo rm -rf ~/.tracks
     cd $HOME/tracks
-    if [ ! -f "go.mod" ];then
+    if [ ! -f "go.mod" ]; then
         echo "go.mod 文件不存在，请检查tracks仓库是否正确克隆。"
         exit 1
     fi
@@ -131,7 +131,7 @@ EOF
     # 询问用户是否要继续执行
     read -p "是否已经领水完毕要继续执行？(yes/no): " choice
 
-    if [[ "$choice" != "yes" ]];then
+    if [[ "$choice" != "yes" ]]; then
         echo "脚本已终止。"
         exit 0
     fi
@@ -180,7 +180,7 @@ EOF
 
         # 检查 RPC 是否正常
         read -p "RPC 是否正常？(yes/no): " rpc_status
-        if [[ "$rpc_status" == "yes" ]];then
+        if [[ "$rpc_status" == "yes" ]]; then
             break
         fi
     done
@@ -205,7 +205,7 @@ function create_tx_script() {
     # 提示用户输入延时时间
     read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
 
-    if [[ -z "$delay_time" ]];then
+    if [[ -z "$delay_time" ]]; then
         echo "延时时间不能为空，请重新输入。"
         read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
     fi
@@ -314,7 +314,6 @@ function monitor_stationd_logs() {
         print "检测到错误关键词，重新启动 stationd 服务...";
         system("sudo systemctl restart stationd");
     }
-
     '
 }
 
@@ -384,6 +383,23 @@ function export_mnemonic() {
     fi
 }
 
+# 重启 stationd 服务
+function restart_stationd() {
+    sudo systemctl restart stationd
+    echo "stationd 服务已重启。"
+}
+
+# 回滚 stationd 配置
+function rollback_stationd() {
+    sudo systemctl stop stationd
+    cd $HOME/tracks
+    go run cmd/main.go rollback
+    go run cmd/main.go rollback
+    go run cmd/main.go rollback
+    sudo systemctl restart stationd
+    echo "stationd 服务已回滚并重启。"
+}
+
 # 主菜单
 function main_menu() {
     while true; do
@@ -399,7 +415,9 @@ function main_menu() {
         echo "8. 停止脚本"
         echo "9. 删除节点"
         echo "10. 重启"
-        read -p "请输入选项（1-10）: " OPTION
+        echo "11. 重启 stationd"
+        echo "12. 回滚 stationd"
+        read -p "请输入选项（1-12）: " OPTION
 
         case $OPTION in
         1) install_node ;;
@@ -412,6 +430,8 @@ function main_menu() {
         8) sudo pkill -f spam.sh ;;
         9) delete_node ;;
         10) restart ;;
+        11) restart_stationd ;;
+        12) rollback_stationd ;;
         *) echo "无效选项。" ;;
         esac
         echo "按任意键返回主菜单..."
