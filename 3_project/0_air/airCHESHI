@@ -205,7 +205,7 @@ function create_tx_script() {
     # 提示用户输入延时时间
     read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
 
-    if [[ -z "$delay_time" ]]; then
+    if [[ -z "$delay_time" ]];then
         echo "延时时间不能为空，请重新输入。"
         read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
     fi
@@ -313,6 +313,9 @@ function monitor_stationd_logs() {
     /error/ {
         print "检测到错误关键词，重新启动 stationd 服务...";
         system("sudo systemctl restart stationd");
+    }
+    {
+        block_count = 0;
     }
     '
 }
