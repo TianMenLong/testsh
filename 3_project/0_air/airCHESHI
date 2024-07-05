@@ -303,7 +303,7 @@ function monitor_stationd_logs() {
 
         if echo "$line" | grep -q "rpc error: code"; then
             current_time=$(date +%s)
-            if [ $((current_time - last_rollback_time)) -gt $restart_interval ]; then
+            if [ $((current_time - last_rollback_time)) -gt $restart_interval]; then
                 echo "检测到 rpc error: code 错误，更换 RPC 地址并停止 stationd 服务..."
                 switch_rpc
                 sudo systemctl stop stationd
