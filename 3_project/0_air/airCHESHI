@@ -297,41 +297,9 @@ function monitor_stationd_logs() {
         print "检测到错误关键词，重新启动 stationd 服务...";
         system("sudo systemctl restart stationd");
     }
-    /error code: .13. msg: .insufficient fees/ {
-        current_time = systime();
-        if ((current_time - last_restart_time) > restart_interval) {
-            print "检测到 insufficient fees 错误，增加 gas 费用并重启 stationd 服务...";
-            system("increase_gas_by_log");
-            system("sudo systemctl restart stationd");
-            last_restart_time = current_time;
-        } else {
-            print "检测到 insufficient fees 错误，但重启间隔时间不足，跳过重启。";
-        }
-    }
-    { print }
-    '
+
 }
 
-# 增加 gas 费用的函数
-function increase_gas_by_log() {
-    local log_file="/var/log/syslog"  # 根据实际情况调整日志文件路径
-    local got_fee=$(grep -oP "got: \K[0-9]+amf" "$log_file" | tail -1)
-    local required_fee=$(grep -oP "required: \K[0-9]+amf" "$log_file" | tail -1)
-
-    if [[ -n "$got_fee" && -n "$required_fee" ]]; then
-        local got_value=$(echo "$got_fee" | grep -oP "[0-9]+")
-        local required_value=$(echo "$required_fee" | grep -oP "[0-9]+")
-        local new_got_value=$((got_value + (required_value - got_value) + 100))
-        
-        sed -i "s/gasFees := fmt.Sprintf(\"%damf\", $got_value)/gasFees := fmt.Sprintf(\"%damf\", $new_got_value)/" "$HOME/tracks/junction/verifyPod.go"
-        sed -i "s/gasFees := fmt.Sprintf(\"%damf\", $got_value)/gasFees := fmt.Sprintf(\"%damf\", $new_got_value)/" "$HOME/tracks/junction/validateVRF.go"
-        sed -i "s/gasFees := fmt.Sprintf(\"%damf\", $got_value)/gasFees := fmt.Sprintf(\"%damf\", $new_got_value)/" "$HOME/tracks/junction/submitPod.go"
-
-        echo "已将 gas 费用增加到 $new_got_value amf"
-    else
-        echo "未能提取到 got 和 required 的费用信息"
-    fi
-}
 
 # 删除节点
 function delete_node() {
