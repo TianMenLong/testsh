@@ -344,6 +344,10 @@ function tracks_log() {
     journalctl -u tracksd -f
 }
 
+function stationd_log() {
+    sudo journalctl -u stationd -f -o cat
+}
+
 function private_key() {
     cd /data/airchains/evm-station/ && /bin/bash ./scripts/local-keys.sh
     cat /root/.avail/identity/identity.toml
@@ -390,23 +394,25 @@ function main_menu() {
         echo "2. 查看 evmos 状态"
         echo "3. 查看 avail 状态"
         echo "4. 查看 tracks 状态"
-        echo "5. 导出所有私钥"
-        echo "6. 导出助记词"
-        echo "7. 停止脚本"
-        echo "8. 删除节点"
-        echo "9. 重启"
-        read -p "请输入选项（1-9）: " OPTION
+        echo "5. 查看 stationd 状态"
+        echo "6. 导出所有私钥"
+        echo "7. 导出助记词"
+        echo "8. 停止脚本"
+        echo "9. 删除节点"
+        echo "10. 重启"
+        read -p "请输入选项（1-10）: " OPTION
 
         case $OPTION in
         1) install_node ;;
         2) evmos_log ;;
         3) avail_log ;;
         4) tracks_log ;;
-        5) private_key ;;
-        6) export_mnemonic ;;
-        7) sudo pkill -f spam.sh ;;
-        8) delete_node ;;
-        9) restart ;;
+        5) stationd_log ;;
+        6) private_key ;;
+        7) export_mnemonic ;;
+        8) sudo pkill -f spam.sh ;;
+        9) delete_node ;;
+        10) restart ;;
         *) echo "无效选项。" ;;
         esac
         echo "按任意键返回主菜单..."
