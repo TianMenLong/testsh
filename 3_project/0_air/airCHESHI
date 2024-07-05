@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# 更新系统包信息
+echo "更新系统包信息..."
+sudo apt update
+
 # 检查并安装所需的工具
 install_if_needed() {
     local package=$1
@@ -7,7 +11,6 @@ install_if_needed() {
         echo "$package 已安装，跳过安装步骤。"
     else
         echo "安装 $package..."
-        sudo apt update
         sudo apt install -y "$package"
     fi
 }
@@ -37,6 +40,17 @@ fi
 # 验证安装后的 Go 版本
 echo "当前 Go 版本："
 go version
+
+# 定义备选 RPC 地址数组
+RPC_LIST=("https://junction-testnet-rpc.synergynodes.com/ " "http://airchains-rpc1.kubenode.xyz:43457/" "https://junction-testnet-rpc.synergynodes.com/" "https://airchains-rpc.kubenode.xyz/" "https://airchains-rpc.tws.im/")
+CURRENT_RPC_INDEX=0
+
+# 切换到下一个 RPC 地址
+function switch_rpc() {
+    CURRENT_RPC_INDEX=$(( (CURRENT_RPC_INDEX + 1) % ${#RPC_LIST[@]} ))
+    JSON_RPC=${RPC_LIST[$CURRENT_RPC_INDEX]}
+    echo "切换到新的 RPC 地址: $JSON_RPC"
+}
 
 # 安装节点
 function install_node() {
@@ -257,11 +271,11 @@ function monitor_stationd_logs() {
     local last_rollback_time=0  # 上次回滚的时间
 
     echo "监控 stationd 服务的实时日志..."
-    sudo journalctl -u stationd -f -o cat | awk -v last_restart_time="$last_restart_time" -v restart_interval="$restart_interval" -v last_rollback_time="$last_rollback_time" '
+    sudo journalctl -u stationd -f -o cat | awk -v last_restart_time="$last_restart_time" -v restart_interval="$restart_interval" -v last_rollback_time="$last_rollback_time" -v rpc_list="${RPC_LIST[*]}" '
     /New Block Found/ {
         block_count++;
         if (block_count >= 25) {
-            print "检测到连续15条 New Block Found 日志，重启 stationd 服务...";
+            print "检测到连续25条 New Block Found 日志，重启 stationd 服务...";
             system("sudo systemctl restart stationd");
             block_count = 0;
         }
@@ -272,7 +286,8 @@ function monitor_stationd_logs() {
     /ERROR_STRING/ {
         current_time = systime();
         if ((current_time - last_rollback_time) > restart_interval) {
-            print "检测到错误日志，停止 stationd 服务并执行回滚操作...";
+            print "检测到错误日志，更换 RPC 地址并停止 stationd 服务...";
+            system("read -r -a rpc_array <<< \"$rpc_list\"; for rpc in \"${rpc_array[@]}\"; do if [[ \"$rpc\" != \"$JSON_RPC\" ]]; then JSON_RPC=\"$rpc\"; break; fi done;");
             system("sudo systemctl stop stationd");
             system("cd '"$HOME"'/tracks && go run cmd/main.go rollback && go run cmd/main.go rollback && go run cmd/main.go rollback");
             system("sudo systemctl restart stationd");
@@ -284,7 +299,8 @@ function monitor_stationd_logs() {
     /rpc error: code/ {
         current_time = systime();
         if ((current_time - last_rollback_time) > restart_interval) {
-            print "检测到 rpc error: code 错误，停止 stationd 服务并执行回滚操作...";
+            print "检测到 rpc error: code 错误，更换 RPC 地址并停止 stationd 服务...";
+            system("read -r -a rpc_array <<< \"$rpc_list\"; for rpc in \"${rpc_array[@]}\"; do if [[ \"$rpc\" != \"$JSON_RPC\" ]]; then JSON_RPC=\"$rpc\"; break; fi done;");
             system("sudo systemctl stop stationd");
             system("cd '"$HOME"'/tracks && go run cmd/main.go rollback && go run cmd/main.go rollback && go run cmd/main.go rollback");
             system("sudo systemctl restart stationd");
@@ -298,6 +314,7 @@ function monitor_stationd_logs() {
         system("sudo systemctl restart stationd");
     }
 
+    '
 }
 
 
