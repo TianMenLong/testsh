@@ -249,8 +249,8 @@ Restart=always
 RestartSec=10
 LimitNOFILE=65535
 TimeoutStopSec=60
-StandardOutput=journal
-StandardError=journal
+StandardOutput=append:/var/log/stationd.log
+StandardError=append:/var/log/stationd.log
 
 [Install]
 WantedBy=multi-user.target
@@ -273,7 +273,7 @@ function monitor_stationd_logs() {
     local last_rollback_time=0  # 上次回滚的时间
 
     echo "监控 stationd 服务的实时日志..."
-    sudo journalctl -u stationd -f -o cat | awk -v last_restart_time="$last_restart_time" -v restart_interval="$restart_interval" -v last_rollback_time="$last_rollback_time" -v rpc_list="${RPC_LIST[*]}" '
+    tail -f /var/log/stationd.log | awk -v last_restart_time="$last_restart_time" -v restart_interval="$restart_interval" -v last_rollback_time="$last_rollback_time" -v rpc_list="${RPC_LIST[*]}" '
     /New Block Found/ {
         block_count++;
         if (block_count >= 25) {
