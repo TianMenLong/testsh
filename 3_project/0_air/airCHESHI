@@ -370,6 +370,17 @@ function setgas(){
     echo "设置gas"
 }
 
+function export_mnemonic() {
+    WALLET_PATH="$HOME/.tracks/junction-accounts/keys/wallet.wallet.json"
+    if [ -f "$WALLET_PATH" ]; then
+        echo "钱包文件存在，提取助记词..."
+        MNEMONIC=$(jq -r '.mnemonic' "$WALLET_PATH")
+        echo "助记词：$MNEMONIC"
+    else
+        echo "钱包文件不存在，无法提取助记词。"
+    fi
+}
+
 # 主菜单
 function main_menu() {
     while true; do
@@ -380,10 +391,11 @@ function main_menu() {
         echo "3. 查看 avail 状态"
         echo "4. 查看 tracks 状态"
         echo "5. 导出所有私钥"
-        echo "6. 停止脚本"
-        echo "7. 删除节点"
-        echo "8. 重启"
-        read -p "请输入选项（1-8）: " OPTION
+        echo "6. 导出助记词"
+        echo "7. 停止脚本"
+        echo "8. 删除节点"
+        echo "9. 重启"
+        read -p "请输入选项（1-9）: " OPTION
 
         case $OPTION in
         1) install_node ;;
@@ -391,9 +403,10 @@ function main_menu() {
         3) avail_log ;;
         4) tracks_log ;;
         5) private_key ;;
-        6) sudo pkill -f spam.sh ;;
-        7) delete_node ;;
-        8) restart ;;
+        6) export_mnemonic ;;
+        7) sudo pkill -f spam.sh ;;
+        8) delete_node ;;
+        9) restart ;;
         *) echo "无效选项。" ;;
         esac
         echo "按任意键返回主菜单..."
