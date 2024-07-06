@@ -271,12 +271,22 @@ function monitor_stationd_logs() {
     local restart_interval=300  # 5分钟间隔，防止频繁重启
     local last_rollback_time=0  # 上次回滚的时间
 
+    # 定义错误字符串
+    ERROR_STRING_1="New Block Found"  # 错误字符串1
+    ERROR_STRING_2="ERROR_STRING"     # 错误字符串2
+    ERROR_STRING_3="rpc error: code"  # 错误字符串3
+    ERROR_STRING_4="error"            # 错误字符串4
+
     echo "监控 stationd 服务的实时日志..."
-    journalctl -u stationd -f | while read -r line; do
-        if echo "$line" | grep -q "New Block Found"; then
+    LOG_FILE="$HOME/stationd.log"
+    journalctl -u stationd -f -o cat >> "$LOG_FILE" &
+
+    while true; do
+        # 检查错误日志
+        if tail -n 50 "$LOG_FILE" | grep -q "$ERROR_STRING_1"; then
             block_count=$((block_count+1))
             if [ "$block_count" -ge 25 ]; then
-                echo "检测到连续25条 New Block Found 日志，重启 stationd 服务..."
+                echo "检测到连续25条 $ERROR_STRING_1 日志，重启 stationd 服务..."
                 sudo systemctl restart stationd
                 block_count=0
             fi
@@ -284,10 +294,10 @@ function monitor_stationd_logs() {
             block_count=0
         fi
 
-        if echo "$line" | grep -q "ERROR_STRING"; then
+        if tail -n 100 "$LOG_FILE" | grep -q "$ERROR_STRING_2"; then
             current_time=$(date +%s)
             if [ $((current_time - last_rollback_time)) -gt $restart_interval ]; then
-                echo "检测到错误日志，更换 RPC 地址并停止 stationd 服务..."
+                echo "检测到错误日志 $ERROR_STRING_2 ，更换 RPC 地址并停止 stationd 服务..."
                 switch_rpc
                 sudo systemctl stop stationd
                 cd $HOME/tracks
@@ -297,14 +307,14 @@ function monitor_stationd_logs() {
                 sudo systemctl restart stationd
                 last_rollback_time=$current_time
             else
-                echo "检测到错误日志，但回滚间隔时间不足，跳过回滚。"
+                echo "检测到错误日志 $ERROR_STRING_2 ，但回滚间隔时间不足，跳过回滚。"
             fi
         fi
 
-        if echo "$line" | grep -q "rpc error: code"; then
+        if tail -n 100 "$LOG_FILE" | grep -q "$ERROR_STRING_3"; then
             current_time=$(date +%s)
-            if [ $((current_time - last_rollback_time)) -gt $restart_interval]; then
-                echo "检测到 rpc error: code 错误，更换 RPC 地址并停止 stationd 服务..."
+            if [ $((current_time - last_rollback_time)) -gt $restart_interval ]; then
+                echo "检测到错误日志 $ERROR_STRING_3 ，更换 RPC 地址并停止 stationd 服务..."
                 switch_rpc
                 sudo systemctl stop stationd
                 cd $HOME/tracks
@@ -314,14 +324,16 @@ function monitor_stationd_logs() {
                 sudo systemctl restart stationd
                 last_rollback_time=$current_time
             else
-                echo "检测到 rpc error: code 错误，但回滚间隔时间不足，跳过回滚。"
+                echo "检测到错误日志 $ERROR_STRING_3 ，但回滚间隔时间不足，跳过回滚。"
             fi
         fi
 
-        if echo "$line" | grep -q "error"; then
-            echo "检测到错误关键词，重新启动 stationd 服务..."
+        if tail -n 100 "$LOG_FILE" | grep -q "$ERROR_STRING_4"; then
+            echo "检测到错误关键词 $ERROR_STRING_4 ，重新启动 stationd 服务..."
             sudo systemctl restart stationd
         fi
+
+        sleep 60  # 监控间隔时间，以秒为单位，可以根据需要调整
     done
 }
 
