@@ -42,7 +42,7 @@ echo "当前 Go 版本："
 go version
 
 # 定义备选 RPC 地址数组
-RPC_LIST=("https://junction-testnet-rpc.synergynodes.com/" "http://airchains-rpc1.kubenode.xyz:43457/" "https://junction-testnet-rpc.synergynodes.com/" "https://airchains-rpc.kubenode.xyz/" "https://airchains-rpc.tws.im/")
+RPC_LIST=("https://junction-testnet-rpc.synergynodes.com/status" "http://airchains-rpc1.kubenode.xyz:43457/status" "https://junction-testnet-rpc.synergynodes.com/status" "https://airchains-rpc.kubenode.xyz/status" "https://airchains-rpc.tws.im/status")
 CURRENT_RPC_INDEX=0
 
 # 切换到下一个 RPC 地址
@@ -155,13 +155,13 @@ EOF
     unset http_proxy
     unset https_proxy
 
-    while true; do
-        # 提示用户输入 JSON RPC 地址
-        read -p "请输入新的 JSON RPC 地址: " JSON_RPC
+    # 定义其他参数
+    INFO="EVM Track"
+    BOOTSTRAP_NODE="/ip4/$LOCAL_IP/tcp/2300/p2p/$NODE_ID"
 
-        # 定义其他参数
-        INFO="EVM Track"
-        BOOTSTRAP_NODE="/ip4/$LOCAL_IP/tcp/2300/p2p/$NODE_ID"
+    while true; do
+        JSON_RPC=${RPC_LIST[$CURRENT_RPC_INDEX]}
+        echo "尝试使用 RPC 地址: $JSON_RPC"
 
         # 运行 tracks create-station 命令
         create_station_cmd="go run cmd/main.go create-station \
@@ -182,6 +182,8 @@ EOF
         read -p "RPC 是否正常？(yes/no): " rpc_status
         if [[ "$rpc_status" == "yes" ]];then
             break
+        else
+            switch_rpc
         fi
     done
 
@@ -338,7 +340,7 @@ function monitor_stationd_logs() {
             sudo systemctl restart stationd
         fi
 
-        sleep 0.01  # 监控间隔时间，以秒为单位，可以根据需要调整
+        sleep 60  # 监控间隔时间，以秒为单位，可以根据需要调整
     done
 }
 
