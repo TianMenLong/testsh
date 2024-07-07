@@ -151,13 +151,13 @@ EOF
     # 获取本机 IP 地址
     LOCAL_IP=$(hostname -I | awk '{print $1}')
 
-    # 取消网络代理
-    unset http_proxy
-    unset https_proxy
-
     # 定义其他参数
     INFO="EVM Track"
     BOOTSTRAP_NODE="/ip4/$LOCAL_IP/tcp/2300/p2p/$NODE_ID"
+
+    # 取消网络代理
+    unset http_proxy
+    unset https_proxy
 
     while true; do
         JSON_RPC=${RPC_LIST[$CURRENT_RPC_INDEX]}
@@ -172,7 +172,7 @@ EOF
             --tracks \"$AIR_ADDRESS\" \
             --bootstrapNode \"$BOOTSTRAP_NODE\""
 
-        echo "Running command:"
+        echo "运行命令:"
         echo "$create_station_cmd"
 
         # 执行命令
@@ -217,7 +217,7 @@ function create_tx_script() {
 
 while true; do
   $HOME/wasm-station/build/wasmstationd tx bank send node ${addr} 1stake --from node --chain-id station-1 --keyring-backend test -y
-  sleep ${delay_time}  # Add a sleep to avoid overwhelming the system or network
+  sleep ${delay_time}  # 添加 sleep 以避免系统或网络过载
 done
 EOF
 
