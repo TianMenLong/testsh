@@ -299,6 +299,12 @@ function monitor_stationd_logs() {
     LOG_FILE="$HOME/stationd.log"
     ERROR_LOG_FILE="$HOME/stationd_error.log"
 
+    # 调试信息：确保 journalctl 命令执行成功
+    if ! journalctl -u stationd -f -o cat > /dev/null 2>&1; then
+        echo "journalctl 命令执行失败，请检查 journalctl 是否正确安装和配置。" | tee -a "$ERROR_LOG_FILE"
+        return
+    fi
+
     journalctl -u stationd -f -o cat | while read -r line; do
         echo "$line" >> "$LOG_FILE"
         current_time=$(date +%s)
