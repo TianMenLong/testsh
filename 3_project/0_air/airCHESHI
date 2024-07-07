@@ -193,7 +193,7 @@ EOF
 
         # 检查 RPC 是否正常
         read -p "RPC 是否正常？(yes/no): " rpc_status
-        if [[ "$rpc_status" == "yes" ]]; then
+        if [[ "$rpc_status" == "yes" ]];then
             break
         fi
 
@@ -221,7 +221,7 @@ function create_tx_script() {
     # 提示用户输入延时时间
     read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
 
-    if [[ -z "$delay_time" ]]; then
+    if [[ -z "$delay_time" ]];then
         echo "延时时间不能为空，请重新输入。"
         read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
     fi
@@ -245,7 +245,7 @@ EOF
 # 新增的stationd服务配置和启动部分
 function setup_stationd_service() {
     # 检查工作目录是否存在，不存在则创建
-    if [ ! -d "$HOME/tracks" ]; then
+    if [ ! -d "$HOME/tracks" ];then
         mkdir -p $HOME/tracks
     fi
 
@@ -289,9 +289,9 @@ function monitor_stationd_logs() {
 
     # 定义错误字符串
     ERROR_STRING_1="New Block Found"  # 错误字符串1
-    ERROR_STRING_2="ERROR_STRING"     # 错误字符串2
-    ERROR_STRING_3="rpc error: code"  # 错误字符串3
-    ERROR_STRING_4="error"            # 错误字符串4
+    ERROR_STRING_2="rpc error: code"  # 错误字符串2
+    ERROR_STRING_3="transport: authentication handshake failed"  # 错误字符串3
+    ERROR_STRING_4="error"  # 错误字符串4
 
     echo "监控 stationd 服务的实时日志..."
     LOG_FILE="$HOME/stationd.log"
@@ -304,7 +304,7 @@ function monitor_stationd_logs() {
         if tail -n 50 "$LOG_FILE" | grep -q "$ERROR_STRING_1"; then
             echo "检测到错误字符串 $ERROR_STRING_1"
             block_count=$((block_count + 1))
-            if [ "$block_count" -ge 25]; then
+            if [ "$block_count" -ge 25 ]; then
                 echo "检测到连续25条 $ERROR_STRING_1 日志，重启 stationd 服务..."
                 sudo systemctl restart stationd
                 block_count=0
@@ -354,7 +354,7 @@ function monitor_stationd_logs() {
             sudo systemctl restart stationd
         fi
 
-        sleep 1  # 监控间隔时间，以秒为单位，可以根据需要调整
+        sleep 60  # 监控间隔时间，以秒为单位，可以根据需要调整
     done
 }
 
