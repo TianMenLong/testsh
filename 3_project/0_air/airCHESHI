@@ -473,7 +473,7 @@ function main_menu() {
         4) tracks_log ;;
         5) stationd_log ;;
         6) private_key ;;
-         7) export_mnemonic ;;
+        7) export_mnemonic ;;
         8) sudo pkill -f spam.sh ;;
         9) delete_node ;;
         10) restart ;;
