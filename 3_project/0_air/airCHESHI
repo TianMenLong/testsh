@@ -295,13 +295,11 @@ function monitor_stationd_logs() {
 
     echo "监控 stationd 服务的实时日志..."
     LOG_FILE="$HOME/stationd.log"
-    journalctl -u stationd -f -o cat >> "$LOG_FILE" &
 
-    while true; do
-        echo "开始检测错误日志..."
+    journalctl -u stationd -f -o cat | while read -r line; do
+        echo "$line" >> "$LOG_FILE"
 
-        # 检查错误日志
-        if tail -n 50 "$LOG_FILE" | grep -q "$ERROR_STRING_1"; then
+        if echo "$line" | grep -q "$ERROR_STRING_1"; then
             echo "检测到错误字符串 $ERROR_STRING_1"
             block_count=$((block_count + 1))
             if [ "$block_count" -ge 25 ]; then
@@ -313,7 +311,7 @@ function monitor_stationd_logs() {
             block_count=0
         fi
 
-        if tail -n 100 "$LOG_FILE" | grep -q "$ERROR_STRING_2"; then
+        if echo "$line" | grep -q "$ERROR_STRING_2"; then
             echo "检测到错误字符串 $ERROR_STRING_2"
             current_time=$(date +%s)
             if [ $((current_time - last_rollback_time)) -gt $restart_interval ]; then
@@ -331,7 +329,7 @@ function monitor_stationd_logs() {
             fi
         fi
 
-        if tail -n 100 "$LOG_FILE" | grep -q "$ERROR_STRING_3"; then
+        if echo "$line" | grep -q "$ERROR_STRING_3"; then
             echo "检测到错误字符串 $ERROR_STRING_3"
             current_time=$(date +%s)
             if [ $((current_time - last_rollback_time)) -gt $restart_interval ]; then
@@ -349,12 +347,12 @@ function monitor_stationd_logs() {
             fi
         fi
 
-        if tail -n 100 "$LOG_FILE" | grep -q "$ERROR_STRING_4"; then
+        if echo "$line" | grep -q "$ERROR_STRING_4"; then
             echo "检测到错误关键词 $ERROR_STRING_4 ，重新启动 stationd 服务..."
             sudo systemctl restart stationd
         fi
 
-        sleep 60  # 监控间隔时间，以秒为单位，可以根据需要调整
+        sleep 0.001  # 监控间隔时间，以秒为单位
     done
 }
 
