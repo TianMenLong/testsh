@@ -293,6 +293,7 @@ function monitor_stationd_logs() {
     ERROR_STRING_2="rpc error: code"  # 错误字符串2
     ERROR_STRING_3="transport: authentication handshake failed"  # 错误字符串3
     ERROR_STRING_4="error"  # 错误字符串4
+    ERROR_STRING_5="error while requesting node"  # 错误字符串5
 
     echo "监控 stationd 服务的实时日志..."
     LOG_FILE="$HOME/stationd.log"
@@ -318,8 +319,7 @@ function monitor_stationd_logs() {
         if echo "$line" | grep -q "$ERROR_STRING_2"; then
             echo "检测到错误字符串 $ERROR_STRING_2" | tee -a "$ERROR_LOG_FILE"
             if [ $((current_time - last_rollback_time)) -gt $restart_interval ]; then
-                echo "错误间隔超过 $restart_interval 秒，更换 RPC 地址并停止 stationd 服务..." | tee -a "$ERROR_LOG_FILE"
-                switch_rpc
+                echo "错误间隔超过 $restart_interval 秒，停止 stationd 服务并回滚..." | tee -a "$ERROR_LOG_FILE"
                 sudo systemctl stop stationd
                 cd $HOME/tracks
                 go run cmd/main.go rollback
@@ -335,8 +335,7 @@ function monitor_stationd_logs() {
         if echo "$line" | grep -q "$ERROR_STRING_3"; then
             echo "检测到错误字符串 $ERROR_STRING_3" | tee -a "$ERROR_LOG_FILE"
             if [ $((current_time - last_rollback_time)) -gt $restart_interval ]; then
-                echo "错误间隔超过 $restart_interval 秒，更换 RPC 地址并停止 stationd 服务..." | tee -a "$ERROR_LOG_FILE"
-                switch_rpc
+                echo "错误间隔超过 $restart_interval 秒，停止 stationd 服务并回滚..." | tee -a "$ERROR_LOG_FILE"
                 sudo systemctl stop stationd
                 cd $HOME/tracks
                 go run cmd/main.go rollback
@@ -351,6 +350,11 @@ function monitor_stationd_logs() {
 
         if echo "$line" | grep -q "$ERROR_STRING_4"; then
             echo "检测到错误关键词 $ERROR_STRING_4 ，重新启动 stationd 服务..." | tee -a "$ERROR_LOG_FILE"
+            sudo systemctl restart stationd
+        fi
+
+        if echo "$line" | grep -q "$ERROR_STRING_5"; then
+            echo "检测到错误字符串 $ERROR_STRING_5" | tee -a "$ERROR_LOG_FILE"
             sudo systemctl restart stationd
         fi
 
@@ -469,7 +473,7 @@ function main_menu() {
         4) tracks_log ;;
         5) stationd_log ;;
         6) private_key ;;
-        7) export_mnemonic ;;
+         7) export_mnemonic ;;
         8) sudo pkill -f spam.sh ;;
         9) delete_node ;;
         10) restart ;;
