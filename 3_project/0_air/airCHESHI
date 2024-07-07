@@ -198,7 +198,7 @@ EOF
         fi
 
         # 添加 sleep 以降低循环频率
-        sleep 5
+        sleep 0.001
     done
 
     # 创建刷TX脚本
