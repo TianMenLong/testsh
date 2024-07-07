@@ -454,7 +454,7 @@ function main_menu() {
         echo "7. 导出助记词"
         echo "8. 停止脚本"
         echo "9. 删除节点"
-        echo "10. 重启"
+        echo "10. 重启11111"
         echo "11. 重启 stationd"
         echo "12. 回滚 stationd"
         echo "13. 更换 RPC 地址"
