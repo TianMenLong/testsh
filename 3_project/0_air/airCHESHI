@@ -309,6 +309,7 @@ function monitor_stationd_logs() {
             if [ "$block_count" -ge 25 ] && [ $((current_time - last_restart_time)) -gt $restart_interval ]; then
                 echo "检测到连续25条 $ERROR_STRING_1 日志，重启 stationd 服务..." | tee -a "$ERROR_LOG_FILE"
                 sudo systemctl restart stationd
+                echo "$(date): 重启 stationd 服务，因为检测到连续25条 $ERROR_STRING_1 日志。" | tee -a "$LOG_FILE"
                 block_count=0
                 last_restart_time=$current_time
             fi
@@ -326,6 +327,7 @@ function monitor_stationd_logs() {
                 go run cmd/main.go rollback
                 go run cmd/main.go rollback
                 sudo systemctl restart stationd
+                echo "$(date): 回滚并重启 stationd 服务，因为检测到 $ERROR_STRING_2 错误。" | tee -a "$LOG_FILE"
                 last_rollback_time=$current_time
             else
                 echo "检测到错误日志 $ERROR_STRING_2 ，但回滚间隔时间不足，跳过回滚。" | tee -a "$ERROR_LOG_FILE"
@@ -342,6 +344,7 @@ function monitor_stationd_logs() {
                 go run cmd/main.go rollback
                 go run cmd/main.go rollback
                 sudo systemctl restart stationd
+                echo "$(date): 回滚并重启 stationd 服务，因为检测到 $ERROR_STRING_3 错误。" | tee -a "$LOG_FILE"
                 last_rollback_time=$current_time
             else
                 echo "检测到错误日志 $ERROR_STRING_3 ，但回滚间隔时间不足，跳过回滚。" | tee -a "$ERROR_LOG_FILE"
@@ -351,11 +354,13 @@ function monitor_stationd_logs() {
         if echo "$line" | grep -q "$ERROR_STRING_4"; then
             echo "检测到错误关键词 $ERROR_STRING_4 ，重新启动 stationd 服务..." | tee -a "$ERROR_LOG_FILE"
             sudo systemctl restart stationd
+            echo "$(date): 重启 stationd 服务，因为检测到 $ERROR_STRING_4 错误。" | tee -a "$LOG_FILE"
         fi
 
         if echo "$line" | grep -q "$ERROR_STRING_5"; then
             echo "检测到错误字符串 $ERROR_STRING_5" | tee -a "$ERROR_LOG_FILE"
             sudo systemctl restart stationd
+            echo "$(date): 重启 stationd 服务，因为检测到 $ERROR_STRING_5 错误。" | tee -a "$LOG_FILE"
         fi
 
         sleep 0.001  # 监控间隔时间，以秒为单位
