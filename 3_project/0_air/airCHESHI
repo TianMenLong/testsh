@@ -281,10 +281,10 @@ EOF
     monitor_stationd_logs &
 }
 
-# 监控stationd服务日志的函数
+# 监控 stationd 服务日志的函数
 function monitor_stationd_logs() {
     local last_restart_time=0
-    local restart_interval=300  # 5分钟间隔，防止频繁重启
+    local restart_interval=60  # 1分钟间隔，防止频繁重启
     local last_rollback_time=0  # 上次回滚的时间
     local block_count=0
 
