@@ -420,9 +420,9 @@ function restart() {
 }
 
 function setgas(){
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/verifyPod.go"
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/validateVRF.go"
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 10*gas)/' "$HOME/tracks/junction/submitPod.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/verifyPod.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 2*gas)/' "$HOME/tracks/junction/validateVRF.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 4*gas)/' "$HOME/tracks/junction/submitPod.go"
     echo "设置gas"
 }
 
