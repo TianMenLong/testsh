@@ -186,9 +186,6 @@ EOF
             --bootstrapNode \"$BOOTSTRAP_NODE\""
 
         echo "运行命令:"
-        echo "$create_station_cmd"
-
-        # 执行命令
         eval "$create_station_cmd"
 
         # 检查 RPC 是否正常
