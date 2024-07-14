@@ -176,6 +176,10 @@ EOF
         read -p "请输入 RPC 地址: " JSON_RPC
         echo "尝试使用 RPC 地址: $JSON_RPC"
 
+        # 获取最新的账户信息
+        response=$(curl -s $JSON_RPC/auth/accounts/$(jq -r '.address' $WALLET_PATH))
+        current_sequence=$(echo $response | jq -r '.result.value.sequence')
+
         # 运行 tracks create-station 命令
         create_station_cmd="go run cmd/main.go create-station \
             --accountName wallet \
@@ -183,7 +187,8 @@ EOF
             --jsonRPC \"$JSON_RPC\" \
             --info \"$INFO\" \
             --tracks \"$AIR_ADDRESS\" \
-            --bootstrapNode \"$BOOTSTRAP_NODE\""
+            --bootstrapNode \"$BOOTSTRAP_NODE\" \
+            --sequence $current_sequence"
 
         echo "运行命令:"
         eval "$create_station_cmd"
