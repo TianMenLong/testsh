@@ -52,6 +52,16 @@ function switch_rpc() {
     echo "切换到新的 RPC 地址: $JSON_RPC"
 }
 
+# 检查并修复数据库文件
+function check_and_repair_db() {
+    echo "检查并修复数据库文件..."
+    # 检查并修复 goleveldb 数据库
+    if [ -d "$HOME/.junction/data" ]; then
+        echo "正在检查并修复 goleveldb 数据库..."
+        junctiond unsafe_reset_all
+    fi
+}
+
 # 安装节点
 function install_node() {
     sudo apt-get update && sudo apt-get install jq build-essential -y
@@ -370,6 +380,9 @@ function monitor_stationd_logs() {
             sudo systemctl restart stationd
             echo "$(date): 重启 stationd 服务，因为检测到 $ERROR_STRING_5 错误。" | tee -a "$LOG_FILE"
         fi
+
+        # 检查并修复数据库文件
+        check_and_repair_db
 
         sleep 0.001  # 监控间隔时间，以秒为单位
     done
