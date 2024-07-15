@@ -177,13 +177,19 @@ EOF
         # 获取最新的账户信息
         response=$(curl -s $JSON_RPC/auth/accounts/$(jq -r '.address' $WALLET_PATH))
 
-        # 检查响应状态码
-        if [[ $? -ne 0 || $(echo "$response" | jq -r '.error') ]]; then
-            echo "RPC 请求失败或返回错误：$response"
+        # 检查响应是否为有效的 JSON
+        if ! echo "$response" | jq . >/dev/null 2>&1; then
+            echo "RPC 请求失败或返回无效的 JSON：$response"
             continue
         fi
 
-        current_sequence=$(echo $response | jq -r '.result.value.sequence')
+        # 检查 JSON 是否包含错误
+        if echo "$response" | jq -e 'has("error")' >/dev/null; then
+            echo "RPC 返回错误：$(echo "$response" | jq -r '.error')"
+            continue
+        fi
+
+        current_sequence=$(echo "$response" | jq -r '.result.value.sequence')
 
         # 运行 tracks create-station 命令
         create_station_cmd="go run cmd/main.go create-station \
@@ -367,7 +373,7 @@ function monitor_stationd_logs() {
 
         if echo "$line" | grep -q "$ERROR_STRING_3"; then
             echo "检测到错误字符串 $ERROR_STRING_3" | tee -a "$ERROR_LOG_FILE"
-            if [ $((current_time - last_rollback_time)) -gt $restart_interval ]; then
+            if [ $((current_time - last_rollback_time)) -gt $restart_interval]; then
                 echo "错误间隔超过 $restart_interval 秒，停止 stationd 服务并回滚..." | tee -a "$ERROR_LOG_FILE"
                 sudo systemctl stop stationd
                 cd $HOME/tracks
