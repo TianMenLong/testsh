@@ -177,18 +177,6 @@ EOF
         # 获取最新的账户信息
         response=$(curl -s $JSON_RPC/auth/accounts/$(jq -r '.address' $WALLET_PATH))
 
-        # 检查响应是否为有效的 JSON
-        if ! echo "$response" | jq . >/dev/null 2>&1; then
-            echo "RPC 请求失败或返回无效的 JSON：$response"
-            continue
-        fi
-
-        # 检查 JSON 是否包含错误
-        if echo "$response" | jq -e 'has("error")' >/dev/null; then
-            echo "RPC 返回错误：$(echo "$response" | jq -r '.error')"
-            continue
-        fi
-
         current_sequence=$(echo "$response" | jq -r '.result.value.sequence')
 
         # 运行 tracks create-station 命令
@@ -233,7 +221,7 @@ function create_tx_script() {
     # 提示用户输入延时时间
     read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
 
-    if [[ -z "$delay_time" ]];then
+    if [[ -z "$delay_time" ]]; then
         echo "延时时间不能为空，请重新输入。"
         read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
     fi
@@ -241,22 +229,24 @@ function create_tx_script() {
     sudo tee spam.sh > /dev/null << EOF
 #!/bin/bash
 
+LOG_FILE=\$HOME/spam_tx.log
+
 while true; do
   # 发送交易
   tx_hash=\$($HOME/wasm-station/build/wasmstationd tx bank send node ${addr} 1stake --from node --chain-id station-1 --keyring-backend test -y --output json | jq -r '.txhash')
-  echo "发送交易，交易哈希: \$tx_hash"
+  echo "发送交易，交易哈希: \$tx_hash" | tee -a \$LOG_FILE
   
   # 检查交易状态
   while true; do
     tx_result=\$($HOME/wasm-station/build/wasmstationd query tx \$tx_hash --output json | jq -r '.tx_result.code')
     if [[ "\$tx_result" == "0" ]]; then
-      echo "交易成功: \$tx_hash"
+      echo "交易成功: \$tx_hash" | tee -a \$LOG_FILE
       break
     elif [[ "\$tx_result" == "null" ]]; then
-      echo "等待交易确认..."
+      echo "等待交易确认..." | tee -a \$LOG_FILE
       sleep 1
     else
-      echo "交易失败: \$tx_hash，错误码: \$tx_result"
+      echo "交易失败: \$tx_hash，错误码: \$tx_result" | tee -a \$LOG_FILE
       break
     fi
   done
@@ -276,7 +266,7 @@ EOF
 # 新增的stationd服务配置和启动部分
 function setup_stationd_service() {
     # 检查工作目录是否存在，不存在则创建
-    if [ ! -d "$HOME/tracks" ];then
+    if [ ! -d "$HOME/tracks" ]; then
         mkdir -p $HOME/tracks
     fi
 
@@ -373,7 +363,7 @@ function monitor_stationd_logs() {
 
         if echo "$line" | grep -q "$ERROR_STRING_3"; then
             echo "检测到错误字符串 $ERROR_STRING_3" | tee -a "$ERROR_LOG_FILE"
-            if [ $((current_time - last_rollback_time)) -gt $restart_interval]; then
+            if [ $((current_time - last_rollback_time)) -gt $restart_interval ]; then
                 echo "错误间隔超过 $restart_interval 秒，停止 stationd 服务并回滚..." | tee -a "$ERROR_LOG_FILE"
                 sudo systemctl stop stationd
                 cd $HOME/tracks
@@ -465,7 +455,7 @@ function setgas(){
 
 function export_mnemonic() {
     WALLET_PATH="$HOME/.tracks/junction-accounts/keys/wallet.wallet.json"
-    if [ -f "$WALLET_PATH" ];then
+    if [ -f "$WALLET_PATH" ]; then
         echo "钱包文件存在，提取助记词..."
         MNEMONIC=$(jq -r '.mnemonic' "$WALLET_PATH")
         echo "助记词：$MNEMONIC"
