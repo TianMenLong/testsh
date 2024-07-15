@@ -76,9 +76,19 @@ function install_node() {
         cd ..
     fi
 
-    # 克隆或更新 tracks 仓库
+    # 克隆或更新 tracks 仓库，确保克隆成功
     if [ ! -d "$HOME/tracks" ]; then
-        git clone https://github.com/airchains-network/tracks.git
+        while true; do
+            git clone https://github.com/airchains-network/tracks.git
+            if [ $? -eq 0 ]; then
+                echo "tracks 仓库克隆成功。"
+                break
+            else
+                echo "tracks 仓库克隆失败，重试中..."
+                rm -rf tracks
+                sleep 3
+            fi
+        done
     else
         cd tracks
         git pull
@@ -128,7 +138,7 @@ EOF
     sudo rm -rf ~/.tracks
     cd $HOME/tracks
     if [ ! -f "go.mod" ]; then
-        echo "go.mod 文件不存在，请检查tracks仓库是否正确克隆。"
+        echo "go.mod 文件不存在，请检查 tracks 仓库是否正确克隆。"
         exit 1
     fi
     go mod tidy
@@ -319,7 +329,7 @@ function monitor_stationd_logs() {
         if echo "$line" | grep -q "$ERROR_STRING_1"; then
             echo "检测到错误字符串 $ERROR_STRING_1" | tee -a "$ERROR_LOG_FILE"
             block_count=$((block_count + 1))
-            if [ "$block_count" -ge 25 ] && [ $((current_time - last_restart_time)) -gt $restart_interval ]; then
+            if [ "$block_count" -ge 25 ] && [ $((current_time - last_restart_time)) -gt $restart_interval]; then
                 echo "检测到连续25条 $ERROR_STRING_1 日志，重启 stationd 服务..." | tee -a "$ERROR_LOG_FILE"
                 sudo systemctl restart stationd
                 echo "$(date): 重启 stationd 服务，因为检测到连续25条 $ERROR_STRING_1 日志。" | tee -a "$LOG_FILE"
