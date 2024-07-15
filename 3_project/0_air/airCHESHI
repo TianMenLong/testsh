@@ -186,10 +186,6 @@ EOF
         read -p "请输入 RPC 地址: " JSON_RPC
         echo "尝试使用 RPC 地址: $JSON_RPC"
 
-        # 获取最新的账户信息
-        response=$(curl -s $JSON_RPC/auth/accounts/$(jq -r '.address' $WALLET_PATH))
-        current_sequence=$(echo $response | jq -r '.result.value.sequence')
-
         # 运行 tracks create-station 命令
         create_station_cmd="go run cmd/main.go create-station \
             --accountName wallet \
@@ -197,15 +193,14 @@ EOF
             --jsonRPC \"$JSON_RPC\" \
             --info \"$INFO\" \
             --tracks \"$AIR_ADDRESS\" \
-            --bootstrapNode \"$BOOTSTRAP_NODE\" \
-            --sequence $current_sequence"
+            --bootstrapNode \"$BOOTSTRAP_NODE\""
 
         echo "运行命令:"
         eval "$create_station_cmd"
 
         # 检查 RPC 是否正常
         read -p "RPC 是否正常？(yes/no): " rpc_status
-        if [[ "$rpc_status" == "yes" ]];then
+        if [[ "$rpc_status" == "yes" ]]; then
             break
         fi
 
@@ -251,13 +246,13 @@ EOF
     chmod +x spam.sh
 
     # 后台运行刷TX脚本
-    nohup bash spam.sh &
+    nohup bash spam.sh > spam.log 2>&1 &
 }
 
 # 新增的stationd服务配置和启动部分
 function setup_stationd_service() {
     # 检查工作目录是否存在，不存在则创建
-    if [ ! -d "$HOME/tracks" ];then
+    if [ ! -d "$HOME/tracks" ]; then
         mkdir -p $HOME/tracks
     fi
 
@@ -437,7 +432,7 @@ function restart() {
     echo "重启tracksd"
 }
 
-function setgas(){
+function setgas() {
     sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/verifyPod.go"
     sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/validateVRF.go"
     sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 10*gas)/' "$HOME/tracks/junction/submitPod.go"
