@@ -41,13 +41,9 @@ source ~/.bashrc
 echo "当前 Go 版本："
 go version
 
-# 定义 RPC 地址
-JSON_RPC="http://213.199.37.164:26657"
-
-# 检查并修复数据库文件
+# 定义一个函数来检查并修复数据库文件
 function check_and_repair_db() {
     echo "检查并修复数据库文件..."
-    # 检查并修复 goleveldb 数据库
     if [ -d "$HOME/.junction/data" ]; then
         echo "正在检查并修复 goleveldb 数据库..."
         junctiond unsafe_reset_all
@@ -174,35 +170,42 @@ EOF
     unset http_proxy
     unset https_proxy
 
-    # 获取最新的账户信息
-    response=$(curl -s $JSON_RPC/auth/accounts/$(jq -r '.address' $WALLET_PATH))
+    while true; do
+        read -p "请输入 RPC 地址: " JSON_RPC
+        echo "尝试使用 RPC 地址: $JSON_RPC"
 
-    # 检查响应状态码
-    if [[ $? -ne 0 || $(echo "$response" | jq -r '.error') ]]; then
-        echo "RPC 请求失败或返回错误：$response"
-        exit 1
-    fi
+        # 获取最新的账户信息
+        response=$(curl -s $JSON_RPC/auth/accounts/$(jq -r '.address' $WALLET_PATH))
 
-    current_sequence=$(echo $response | jq -r '.result.value.sequence')
+        # 检查响应状态码
+        if [[ $? -ne 0 || $(echo "$response" | jq -r '.error') ]]; then
+            echo "RPC 请求失败或返回错误：$response"
+            continue
+        fi
 
-    # 运行 tracks create-station 命令
-    create_station_cmd="go run cmd/main.go create-station \
-        --accountName wallet \
-        --accountPath $HOME/.tracks/junction-accounts/keys \
-        --jsonRPC \"$JSON_RPC\" \
-        --info \"$INFO\" \
-        --tracks \"$AIR_ADDRESS\" \
-        --bootstrapNode \"$BOOTSTRAP_NODE\""
+        current_sequence=$(echo $response | jq -r '.result.value.sequence')
 
-    echo "运行命令:"
-    eval "$create_station_cmd"
+        # 运行 tracks create-station 命令
+        create_station_cmd="go run cmd/main.go create-station \
+            --accountName wallet \
+            --accountPath $HOME/.tracks/junction-accounts/keys \
+            --jsonRPC \"$JSON_RPC\" \
+            --info \"$INFO\" \
+            --tracks \"$AIR_ADDRESS\" \
+            --bootstrapNode \"$BOOTSTRAP_NODE\""
 
-    # 检查 RPC 是否正常
-    read -p "RPC 是否正常？(yes/no): " rpc_status
-    if [[ "$rpc_status" != "yes" ]]; then
-        echo "RPC 不正常，脚本终止。"
-        exit 1
-    fi
+        echo "运行命令:"
+        eval "$create_station_cmd"
+
+        # 检查 RPC 是否正常
+        read -p "RPC 是否正常？(yes/no): " rpc_status
+        if [[ "$rpc_status" == "yes" ]]; then
+            break
+        fi
+
+        # 添加 sleep 以降低循环频率
+        sleep 0.001
+    done
 
     # 创建刷TX脚本
     create_tx_script
@@ -515,7 +518,10 @@ function main_menu() {
         10) restart ;;
         11) restart_stationd ;;
         12) rollback_stationd ;;
-        13) switch_rpc ;;
+        13) 
+            read -p "请输入新的 RPC 地址: " NEW_RPC
+            JSON_RPC=$NEW_RPC
+            ;;
         *) echo "无效选项。" ;;
         esac
         echo "按任意键返回主菜单..."
