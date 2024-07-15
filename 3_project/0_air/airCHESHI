@@ -41,9 +41,21 @@ source ~/.bashrc
 echo "当前 Go 版本："
 go version
 
-# 定义一个函数来检查并修复数据库文件
+# 定义备选 RPC 地址数组
+RPC_LIST=("https://junction-testnet-rpc.synergynodes.com/status" "http://airchains-rpc1.kubenode.xyz:43457/status" "https://junction-testnet-rpc.synergynodes.com/status" "https://airchains-rpc.kubenode.xyz/status" "https://airchains-rpc.tws.im/status")
+CURRENT_RPC_INDEX=0
+
+# 切换到下一个 RPC 地址
+function switch_rpc() {
+    CURRENT_RPC_INDEX=$(( (CURRENT_RPC_INDEX + 1) % ${#RPC_LIST[@]} ))
+    JSON_RPC=${RPC_LIST[$CURRENT_RPC_INDEX]}
+    echo "切换到新的 RPC 地址: $JSON_RPC"
+}
+
+# 检查并修复数据库文件
 function check_and_repair_db() {
     echo "检查并修复数据库文件..."
+    # 检查并修复 goleveldb 数据库
     if [ -d "$HOME/.junction/data" ]; then
         echo "正在检查并修复 goleveldb 数据库..."
         junctiond unsafe_reset_all
@@ -176,8 +188,7 @@ EOF
 
         # 获取最新的账户信息
         response=$(curl -s $JSON_RPC/auth/accounts/$(jq -r '.address' $WALLET_PATH))
-
-        current_sequence=$(echo "$response" | jq -r '.result.value.sequence')
+        current_sequence=$(echo $response | jq -r '.result.value.sequence')
 
         # 运行 tracks create-station 命令
         create_station_cmd="go run cmd/main.go create-station \
@@ -186,14 +197,15 @@ EOF
             --jsonRPC \"$JSON_RPC\" \
             --info \"$INFO\" \
             --tracks \"$AIR_ADDRESS\" \
-            --bootstrapNode \"$BOOTSTRAP_NODE\""
+            --bootstrapNode \"$BOOTSTRAP_NODE\" \
+            --sequence $current_sequence"
 
         echo "运行命令:"
         eval "$create_station_cmd"
 
         # 检查 RPC 是否正常
         read -p "RPC 是否正常？(yes/no): " rpc_status
-        if [[ "$rpc_status" == "yes" ]]; then
+        if [[ "$rpc_status" == "yes" ]];then
             break
         fi
 
@@ -221,7 +233,7 @@ function create_tx_script() {
     # 提示用户输入延时时间
     read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
 
-    if [[ -z "$delay_time" ]]; then
+    if [[ -z "$delay_time" ]];then
         echo "延时时间不能为空，请重新输入。"
         read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
     fi
@@ -229,30 +241,9 @@ function create_tx_script() {
     sudo tee spam.sh > /dev/null << EOF
 #!/bin/bash
 
-LOG_FILE=\$HOME/spam_tx.log
-
 while true; do
-  # 发送交易
-  tx_hash=\$($HOME/wasm-station/build/wasmstationd tx bank send node ${addr} 1stake --from node --chain-id station-1 --keyring-backend test -y --output json | jq -r '.txhash')
-  echo "发送交易，交易哈希: \$tx_hash" | tee -a \$LOG_FILE
-  
-  # 检查交易状态
-  while true; do
-    tx_result=\$($HOME/wasm-station/build/wasmstationd query tx \$tx_hash --output json | jq -r '.tx_result.code')
-    if [[ "\$tx_result" == "0" ]]; then
-      echo "交易成功: \$tx_hash" | tee -a \$LOG_FILE
-      break
-    elif [[ "\$tx_result" == "null" ]]; then
-      echo "等待交易确认..." | tee -a \$LOG_FILE
-      sleep 1
-    else
-      echo "交易失败: \$tx_hash，错误码: \$tx_result" | tee -a \$LOG_FILE
-      break
-    fi
-  done
-  
-  # 添加 sleep 以避免系统或网络过载
-  sleep ${delay_time}
+  $HOME/wasm-station/build/wasmstationd tx bank send node ${addr} 1stake --from node --chain-id station-1 --keyring-backend test -y
+  sleep ${delay_time}  # 添加 sleep 以避免系统或网络过载
 done
 EOF
 
@@ -266,7 +257,7 @@ EOF
 # 新增的stationd服务配置和启动部分
 function setup_stationd_service() {
     # 检查工作目录是否存在，不存在则创建
-    if [ ! -d "$HOME/tracks" ]; then
+    if [ ! -d "$HOME/tracks" ];then
         mkdir -p $HOME/tracks
     fi
 
@@ -455,7 +446,7 @@ function setgas(){
 
 function export_mnemonic() {
     WALLET_PATH="$HOME/.tracks/junction-accounts/keys/wallet.wallet.json"
-    if [ -f "$WALLET_PATH" ]; then
+    if [ -f "$WALLET_PATH" ];then
         echo "钱包文件存在，提取助记词..."
         MNEMONIC=$(jq -r '.mnemonic' "$WALLET_PATH")
         echo "助记词：$MNEMONIC"
@@ -514,10 +505,7 @@ function main_menu() {
         10) restart ;;
         11) restart_stationd ;;
         12) rollback_stationd ;;
-        13) 
-            read -p "请输入新的 RPC 地址: " NEW_RPC
-            JSON_RPC=$NEW_RPC
-            ;;
+        13) switch_rpc ;;
         *) echo "无效选项。" ;;
         esac
         echo "按任意键返回主菜单..."
