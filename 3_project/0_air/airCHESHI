@@ -367,7 +367,7 @@ function monitor_stationd_logs() {
 
         if echo "$line" | grep -q "$ERROR_STRING_3"; then
             echo "检测到错误字符串 $ERROR_STRING_3" | tee -a "$ERROR_LOG_FILE"
-            if [ $((current_time - last_rollback_time)) -gt $restart_interval]; then
+            if [ $((current_time - last_rollback_time)) -gt $restart_interval ]; then
                 echo "错误间隔超过 $restart_interval 秒，停止 stationd 服务并回滚..." | tee -a "$ERROR_LOG_FILE"
                 sudo systemctl stop stationd
                 cd $HOME/tracks
