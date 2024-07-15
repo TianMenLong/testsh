@@ -188,6 +188,13 @@ EOF
 
         # 获取最新的账户信息
         response=$(curl -s $JSON_RPC/auth/accounts/$(jq -r '.address' $WALLET_PATH))
+
+        # 确保 JSON 文件格式正确
+        if ! echo "$response" | jq empty; then
+            echo "无效的 JSON 响应：$response"
+            continue
+        fi
+
         current_sequence=$(echo $response | jq -r '.result.value.sequence')
 
         # 运行 tracks create-station 命令
@@ -197,8 +204,7 @@ EOF
             --jsonRPC \"$JSON_RPC\" \
             --info \"$INFO\" \
             --tracks \"$AIR_ADDRESS\" \
-            --bootstrapNode \"$BOOTSTRAP_NODE\" \
-            --sequence $current_sequence"
+            --bootstrapNode \"$BOOTSTRAP_NODE\""
 
         echo "运行命令:"
         eval "$create_station_cmd"
@@ -373,7 +379,7 @@ function monitor_stationd_logs() {
 
         if echo "$line" | grep -q "$ERROR_STRING_3"; then
             echo "检测到错误字符串 $ERROR_STRING_3" | tee -a "$ERROR_LOG_FILE"
-            if [ $((current_time - last_rollback_time)) -gt $restart_interval ]; then
+            if [ $((current_time - last_rollback_time)) -gt $restart_interval]; then
                 echo "错误间隔超过 $restart_interval 秒，停止 stationd 服务并回滚..." | tee -a "$ERROR_LOG_FILE"
                 sudo systemctl stop stationd
                 cd $HOME/tracks
