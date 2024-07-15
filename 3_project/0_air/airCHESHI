@@ -41,16 +41,8 @@ source ~/.bashrc
 echo "当前 Go 版本："
 go version
 
-# 定义备选 RPC 地址数组
-RPC_LIST=("https://junction-testnet-rpc.synergynodes.com/status" "http://airchains-rpc1.kubenode.xyz:43457/status" "https://junction-testnet-rpc.synergynodes.com/status" "https://airchains-rpc.kubenode.xyz/status" "https://airchains-rpc.tws.im/status")
-CURRENT_RPC_INDEX=0
-
-# 切换到下一个 RPC 地址
-function switch_rpc() {
-    CURRENT_RPC_INDEX=$(( (CURRENT_RPC_INDEX + 1) % ${#RPC_LIST[@]} ))
-    JSON_RPC=${RPC_LIST[$CURRENT_RPC_INDEX]}
-    echo "切换到新的 RPC 地址: $JSON_RPC"
-}
+# 定义 RPC 地址
+JSON_RPC="http://213.199.37.164:26657"
 
 # 检查并修复数据库文件
 function check_and_repair_db() {
@@ -182,42 +174,35 @@ EOF
     unset http_proxy
     unset https_proxy
 
-    while true; do
-        read -p "请输入 RPC 地址: " JSON_RPC
-        echo "尝试使用 RPC 地址: $JSON_RPC"
+    # 获取最新的账户信息
+    response=$(curl -s $JSON_RPC/auth/accounts/$(jq -r '.address' $WALLET_PATH))
 
-        # 获取最新的账户信息
-        response=$(curl -s $JSON_RPC/auth/accounts/$(jq -r '.address' $WALLET_PATH))
+    # 检查响应状态码
+    if [[ $? -ne 0 || $(echo "$response" | jq -r '.error') ]]; then
+        echo "RPC 请求失败或返回错误：$response"
+        exit 1
+    fi
 
-        # 确保 JSON 文件格式正确
-        if ! echo "$response" | jq empty; then
-            echo "无效的 JSON 响应：$response"
-            continue
-        fi
+    current_sequence=$(echo $response | jq -r '.result.value.sequence')
 
-        current_sequence=$(echo $response | jq -r '.result.value.sequence')
+    # 运行 tracks create-station 命令
+    create_station_cmd="go run cmd/main.go create-station \
+        --accountName wallet \
+        --accountPath $HOME/.tracks/junction-accounts/keys \
+        --jsonRPC \"$JSON_RPC\" \
+        --info \"$INFO\" \
+        --tracks \"$AIR_ADDRESS\" \
+        --bootstrapNode \"$BOOTSTRAP_NODE\""
 
-        # 运行 tracks create-station 命令
-        create_station_cmd="go run cmd/main.go create-station \
-            --accountName wallet \
-            --accountPath $HOME/.tracks/junction-accounts/keys \
-            --jsonRPC \"$JSON_RPC\" \
-            --info \"$INFO\" \
-            --tracks \"$AIR_ADDRESS\" \
-            --bootstrapNode \"$BOOTSTRAP_NODE\""
+    echo "运行命令:"
+    eval "$create_station_cmd"
 
-        echo "运行命令:"
-        eval "$create_station_cmd"
-
-        # 检查 RPC 是否正常
-        read -p "RPC 是否正常？(yes/no): " rpc_status
-        if [[ "$rpc_status" == "yes" ]];then
-            break
-        fi
-
-        # 添加 sleep 以降低循环频率
-        sleep 0.001
-    done
+    # 检查 RPC 是否正常
+    read -p "RPC 是否正常？(yes/no): " rpc_status
+    if [[ "$rpc_status" != "yes" ]]; then
+        echo "RPC 不正常，脚本终止。"
+        exit 1
+    fi
 
     # 创建刷TX脚本
     create_tx_script
