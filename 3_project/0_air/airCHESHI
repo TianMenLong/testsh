@@ -124,10 +124,10 @@ function install_node() {
     fi
 
     # 克隆或更新 tracks 仓库，确保克隆成功
-    if [ ! -d "$HOME/tracks" ]; then
+    if [ ! -d "$HOME/tracks" ];then
         while true; do
             git clone https://github.com/airchains-network/tracks.git
-            if [ $? -eq 0 ]; then
+            if [ $? -eq 0 ];then
                 echo "tracks 仓库克隆成功。"
                 break
             else
@@ -174,7 +174,7 @@ EOF
     # 定义文件路径
     KEY_FILE="$HOME/.eigenlayer/operator_keys/wallet.ecdsa.key.json"
     # 检查文件是否存在
-    if [ -f "$KEY_FILE" ]; then
+    if [ -f "$KEY_FILE" ];then
         echo "文件 $KEY_FILE 已经存在，删除文件"
         rm -f "$KEY_FILE"
     fi
@@ -220,7 +220,7 @@ EOF
     # 询问用户是否要继续执行
     read -p "是否已经领水完毕要继续执行？(yes/no): " choice
 
-    if [[ "$choice" != "yes" ]]; then
+    if [[ "$choice" != "yes" ]];then
         echo "脚本已终止。"
         exit 0
     fi
@@ -266,7 +266,7 @@ EOF
 
         # 检查 RPC 是否正常
         read -p "RPC 是否正常？(yes/no): " rpc_status
-        if [[ "$rpc_status" == "yes" ]]; then
+        if [[ "$rpc_status" == "yes" ]];then
             break
         fi
 
@@ -294,7 +294,7 @@ function create_tx_script() {
     # 提示用户输入延时时间
     read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
 
-    if [[ -z "$delay_time" ]]; then
+    if [[ -z "$delay_time" ]];then
         echo "延时时间不能为空，请重新输入。"
         read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
     fi
@@ -322,7 +322,7 @@ EOF
 # 新增的stationd服务配置和启动部分
 function setup_stationd_service() {
     # 检查工作目录是否存在，不存在则创建
-    if [ ! -d "$HOME/tracks" ]; then
+    if [ ! -d "$HOME/tracks" ];then
         mkdir -p $HOME/tracks
     fi
 
@@ -504,7 +504,7 @@ function restart() {
 
 function export_mnemonic() {
     WALLET_PATH="$HOME/.tracks/junction-accounts/keys/wallet.wallet.json"
-    if [ -f "$WALLET_PATH" ]; then
+    if [ -f "$WALLET_PATH" ];then
         echo "钱包文件存在，提取助记词..."
         MNEMONIC=$(jq -r '.mnemonic' "$WALLET_PATH")
         echo "助记词：$MNEMONIC"
