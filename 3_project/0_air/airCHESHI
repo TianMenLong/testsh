@@ -85,12 +85,28 @@ function check_vrf_and_data() {
     fi
 
     # 确认生成 VRF 所需的所有输入数据是否完整并正确传递
-    if [ ! -f "$HOME/.tracks/data/vrf_input.json" ]; then
+    if [ ! -f "$HOME/.tracks/data/vrf_input.json" ];then
         echo "VRF 输入数据文件不存在，请检查数据。"
         exit 1
     fi
 
     echo "VRF 配置和数据完整性检查通过。"
+}
+
+# 设置 gas
+function setgas() {
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/verifyPod.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/validateVRF.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 10*gas)/' "$HOME/tracks/junction/submitPod.go"
+    echo "设置gas"
+    
+    # 调试信息：显示修改后的文件内容
+    echo "修改后的 verifyPod.go 文件内容:"
+    cat "$HOME/tracks/junction/verifyPod.go" | grep gasFees
+    echo "修改后的 validateVRF.go 文件内容:"
+    cat "$HOME/tracks/junction/validateVRF.go" | grep gasFees
+    echo "修改后的 submitPod.go 文件内容:"
+    cat "$HOME/tracks/junction/submitPod.go" | grep gasFees
 }
 
 # 安装节点
@@ -111,7 +127,7 @@ function install_node() {
     if [ ! -d "$HOME/tracks" ]; then
         while true; do
             git clone https://github.com/airchains-network/tracks.git
-            if [ $? -eq 0 ];then
+            if [ $? -eq 0 ]; then
                 echo "tracks 仓库克隆成功。"
                 break
             else
@@ -158,7 +174,7 @@ EOF
     # 定义文件路径
     KEY_FILE="$HOME/.eigenlayer/operator_keys/wallet.ecdsa.key.json"
     # 检查文件是否存在
-    if [ -f "$KEY_FILE" ];then
+    if [ -f "$KEY_FILE" ]; then
         echo "文件 $KEY_FILE 已经存在，删除文件"
         rm -f "$KEY_FILE"
     fi
@@ -173,6 +189,15 @@ EOF
         exit 1
     fi
     go mod tidy
+
+    # 设置 gas
+    setgas
+
+    # 重新编译代码
+    go build -o tracks cmd/main.go
+
+    # 重新启动服务
+    sudo systemctl restart wasmstationd
 
     # 提示用户输入公钥和节点名
     read -p "请输入Public Key hex: " dakey
@@ -195,7 +220,7 @@ EOF
     # 询问用户是否要继续执行
     read -p "是否已经领水完毕要继续执行？(yes/no): " choice
 
-    if [[ "$choice" != "yes" ]];then
+    if [[ "$choice" != "yes" ]]; then
         echo "脚本已终止。"
         exit 0
     fi
@@ -269,7 +294,7 @@ function create_tx_script() {
     # 提示用户输入延时时间
     read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
 
-    if [[ -z "$delay_time" ]];then
+    if [[ -z "$delay_time" ]]; then
         echo "延时时间不能为空，请重新输入。"
         read -p "请输入刷TX脚本的延时时间（秒）: " delay_time
     fi
@@ -297,7 +322,7 @@ EOF
 # 新增的stationd服务配置和启动部分
 function setup_stationd_service() {
     # 检查工作目录是否存在，不存在则创建
-    if [ ! -d "$HOME/tracks" ];then
+    if [ ! -d "$HOME/tracks" ]; then
         mkdir -p $HOME/tracks
     fi
 
@@ -364,7 +389,7 @@ function monitor_stationd_logs() {
         if echo "$line" | grep -q "$ERROR_STRING_1"; then
             echo "检测到错误字符串 $ERROR_STRING_1" | tee -a "$ERROR_LOG_FILE"
             block_count=$((block_count + 1))
-            if [ "$block_count" -ge 25 ] && [ $((current_time - last_restart_time)) -gt $restart_interval]; then
+            if [ "$block_count" -ge 25 ] && [ $((current_time - last_restart_time)) -gt $restart_interval ]; then
                 echo "检测到连续25条 $ERROR_STRING_1 日志，重启 stationd 服务..." | tee -a "$ERROR_LOG_FILE"
                 sudo systemctl restart stationd
                 echo "$(date): 重启 stationd 服务，因为检测到连续25条 $ERROR_STRING_1 日志。" | tee -a "$LOG_FILE"
@@ -477,16 +502,9 @@ function restart() {
     echo "重启tracksd"
 }
 
-function setgas() {
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/verifyPod.go"
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/validateVRF.go"
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 10*gas)/' "$HOME/tracks/junction/submitPod.go"
-    echo "设置gas"
-}
-
 function export_mnemonic() {
     WALLET_PATH="$HOME/.tracks/junction-accounts/keys/wallet.wallet.json"
-    if [ -f "$WALLET_PATH" ];then
+    if [ -f "$WALLET_PATH" ]; then
         echo "钱包文件存在，提取助记词..."
         MNEMONIC=$(jq -r '.mnemonic' "$WALLET_PATH")
         echo "助记词：$MNEMONIC"
