@@ -41,17 +41,6 @@ source ~/.bashrc
 echo "当前 Go 版本："
 go version
 
-# 定义备选 RPC 地址数组
-RPC_LIST=("https://junction-testnet-rpc.synergynodes.com/status" "http://airchains-rpc1.kubenode.xyz:43457/status" "https://junction-testnet-rpc.synergynodes.com/status" "https://airchains-rpc.kubenode.xyz/status" "https://airchains-rpc.tws.im/status")
-CURRENT_RPC_INDEX=0
-
-# 切换到下一个 RPC 地址
-function switch_rpc() {
-    CURRENT_RPC_INDEX=$(( (CURRENT_RPC_INDEX + 1) % ${#RPC_LIST[@]} ))
-    JSON_RPC=${RPC_LIST[$CURRENT_RPC_INDEX]}
-    echo "切换到新的 RPC 地址: $JSON_RPC"
-}
-
 # 检查并修复数据库文件
 function check_and_repair_db() {
     echo "检查并修复数据库文件..."
@@ -192,54 +181,29 @@ EOF
     # 取消网络代理
     unset http_proxy
     unset https_proxy
-# 设置 gas 费用
-verifyPodFile="$HOME/tracks/junction/verifyPod.go"
-validateVRFFile="$HOME/tracks/junction/validateVRF.go"
-submitPodFile="$HOME/tracks/junction/submitPod.go"
-
 # 更新 verifyPod.go 文件中的 gas 费用
-if [ -f "$verifyPodFile" ]; then
-    sed -i '/gasFees := fmt.Sprintf/d' "$verifyPodFile"
-    # 确定正确插入的位置
-    sed -i '/func verifyPod/a \    gas := 100  // 定义 gas 变量\n    gasFees := fmt.Sprintf("%damf", 5*gas)\n    fmt.Println(gasFees)' "$verifyPodFile"
-    if grep -q 'gasFees := fmt.Sprintf("%damf", 5*gas)' "$verifyPodFile"; then
-        echo "verifyPod.go 中的 gas 费用已成功设置为 5*gas"
-    else
-        echo "无法正确设置 verifyPod.go 中的 gas 费用"
-    fi
+sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/verifyPod.go"
+if grep -q 'gasFees := fmt.Sprintf("%damf", 5*gas)' "$HOME/tracks/junction/verifyPod.go"; then
+    echo "verifyPod.go 中的 gas 费用已成功设置为 5*gas"
 else
-    echo "文件 $verifyPodFile 不存在"
+    echo "无法正确设置 verifyPod.go 中的 gas 费用"
 fi
 
 # 更新 validateVRF.go 文件中的 gas 费用
-if [ -f "$validateVRFFile" ]; then
-    sed -i '/gasFees := fmt.Sprintf/d' "$validateVRFFile"
-    # 确定正确插入的位置
-    sed -i '/func validateVRF/a \    gas := 100  // 定义 gas 变量\n    gasFees := fmt.Sprintf("%damf", 5*gas)\n    fmt.Println(gasFees)' "$validateVRFFile"
-    if grep -q 'gasFees := fmt.Sprintf("%damf", 5*gas)' "$validateVRFFile"; then
-        echo "validateVRF.go 中的 gas 费用已成功设置为 5*gas"
-    else
-        echo "无法正确设置 validateVRF.go 中的 gas 费用"
-    fi
+sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/validateVRF.go"
+if grep -q 'gasFees := fmt.Sprintf("%damf", 5*gas)' "$HOME/tracks/junction/validateVRF.go"; then
+    echo "validateVRF.go 中的 gas 费用已成功设置为 5*gas"
 else
-    echo "文件 $validateVRFFile 不存在"
+    echo "无法正确设置 validateVRF.go 中的 gas 费用"
 fi
 
 # 更新 submitPod.go 文件中的 gas 费用
-if [ -f "$submitPodFile" ]; then
-    sed -i '/gasFees := fmt.Sprintf/d' "$submitPodFile"
-    # 确定正确插入的位置
-    sed -i '/func submitPod/a \    gas := 100  // 定义 gas 变量\n    gasFees := fmt.Sprintf("%damf", 10*gas)\n    fmt.Println(gasFees)' "$submitPodFile"
-    if grep -q 'gasFees := fmt.Sprintf("%damf", 10*gas)' "$submitPodFile"; then
-        echo "submitPod.go 中的 gas 费用已成功设置为 10*gas"
-    else
-        echo "无法正确设置 submitPod.go 中的 gas 费用"
-    fi
+sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 10*gas)/' "$HOME/tracks/junction/submitPod.go"
+if grep -q 'gasFees := fmt.Sprintf("%damf", 10*gas)' "$HOME/tracks/junction/submitPod.go"; then
+    echo "submitPod.go 中的 gas 费用已成功设置为 10*gas"
 else
-    echo "文件 $submitPodFile 不存在"
+    echo "无法正确设置 submitPod.go 中的 gas 费用"
 fi
-
-echo "设置gas完成"
 
     while true; do
         read -p "请输入 RPC 地址: " JSON_RPC
