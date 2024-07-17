@@ -136,7 +136,6 @@ EOF
     read -p "请输入Public Key hex: " dakey
     read -p "请输入节点名: " moniker
 
-
     # 执行 Go 命令，替换用户输入的值
     go run cmd/main.go init \
         --daRpc "disperser-holesky.eigenda.xyz" \
@@ -181,29 +180,30 @@ EOF
     # 取消网络代理
     unset http_proxy
     unset https_proxy
-# 更新 verifyPod.go 文件中的 gas 费用
-sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/verifyPod.go"
-if grep -q 'gasFees := fmt.Sprintf("%damf", 5*gas)' "$HOME/tracks/junction/verifyPod.go"; then
-    echo "verifyPod.go 中的 gas 费用已成功设置为 5*gas"
-else
-    echo "无法正确设置 verifyPod.go 中的 gas 费用"
-fi
 
-# 更新 validateVRF.go 文件中的 gas 费用
-sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/validateVRF.go"
-if grep -q 'gasFees := fmt.Sprintf("%damf", 5*gas)' "$HOME/tracks/junction/validateVRF.go"; then
-    echo "validateVRF.go 中的 gas 费用已成功设置为 5*gas"
-else
-    echo "无法正确设置 validateVRF.go 中的 gas 费用"
-fi
+    # 更新 verifyPod.go 文件中的 gas 费用
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/verifyPod.go"
+    if grep -q 'gasFees := fmt.Sprintf("%damf", 5*gas)' "$HOME/tracks/junction/verifyPod.go"; then
+        echo "verifyPod.go 中的 gas 费用已成功设置为 5*gas"
+    else
+        echo "无法正确设置 verifyPod.go 中的 gas 费用"
+    fi
 
-# 更新 submitPod.go 文件中的 gas 费用
-sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 10*gas)/' "$HOME/tracks/junction/submitPod.go"
-if grep -q 'gasFees := fmt.Sprintf("%damf", 10*gas)' "$HOME/tracks/junction/submitPod.go"; then
-    echo "submitPod.go 中的 gas 费用已成功设置为 10*gas"
-else
-    echo "无法正确设置 submitPod.go 中的 gas 费用"
-fi
+    # 更新 validateVRF.go 文件中的 gas 费用
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/validateVRF.go"
+    if grep -q 'gasFees := fmt.Sprintf("%damf", 5*gas)' "$HOME/tracks/junction/validateVRF.go"; then
+        echo "validateVRF.go 中的 gas 费用已成功设置为 5*gas"
+    else
+        echo "无法正确设置 validateVRF.go 中的 gas 费用"
+    fi
+
+    # 更新 submitPod.go 文件中的 gas 费用
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 10*gas)/' "$HOME/tracks/junction/submitPod.go"
+    if grep -q 'gasFees := fmt.Sprintf("%damf", 10*gas)' "$HOME/tracks/junction/submitPod.go"; then
+        echo "submitPod.go 中的 gas 费用已成功设置为 10*gas"
+    else
+        echo "无法正确设置 submitPod.go 中的 gas 费用"
+    fi
 
     while true; do
         read -p "请输入 RPC 地址: " JSON_RPC
@@ -483,6 +483,23 @@ function rollback_stationd() {
     echo "stationd 服务已回滚并重启。"
 }
 
+# 启动刷TX脚本
+function start_tx_script() {
+    # 检查 spam.sh 是否存在
+    if [ -f "$HOME/spam.sh" ]; then
+        # 检查是否已经在运行
+        if pgrep -f "bash $HOME/spam.sh" > /dev/null; then
+            echo "刷TX脚本已经在运行。"
+        else
+            echo "启动刷TX脚本..."
+            nohup bash "$HOME/spam.sh" > "$HOME/spam.log" 2>&1 &
+            echo "刷TX脚本已启动。"
+        fi
+    else
+        echo "刷TX脚本不存在，请先创建。"
+    fi
+}
+
 # 主菜单
 function main_menu() {
     while true; do
@@ -499,8 +516,9 @@ function main_menu() {
         echo "9. 重启"
         echo "10. 重启 stationd"
         echo "11. 回滚 stationd"
-        echo "12. 更换 RPC 地址"
-        read -p "请输入选项（1-12）: " OPTION
+        echo "12. 启动刷TX脚本"
+        echo "13. 更换 RPC 地址"
+        read -p "请输入选项（1-13）: " OPTION
 
         case $OPTION in
         1) install_node ;;
@@ -514,7 +532,8 @@ function main_menu() {
         9) restart ;;
         10) restart_stationd ;;
         11) rollback_stationd ;;
-        12) switch_rpc ;;
+        12) start_tx_script ;;
+        13) switch_rpc ;;
         *) echo "无效选项。" ;;
         esac
         echo "按任意键返回主菜单..."
