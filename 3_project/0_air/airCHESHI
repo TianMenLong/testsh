@@ -146,6 +146,52 @@ EOF
     # 提示用户输入公钥和节点名
     read -p "请输入Public Key hex: " dakey
     read -p "请输入节点名: " moniker
+
+
+    # 执行 Go 命令，替换用户输入的值
+    go run cmd/main.go init \
+        --daRpc "disperser-holesky.eigenda.xyz" \
+        --daKey "$dakey" \
+        --daType "eigen" \
+        --moniker "$moniker" \
+        --stationRpc "http://127.0.0.1:26657" \
+        --stationAPI "http://127.0.0.1:1317" \
+        --stationType "wasm"
+
+    go run cmd/main.go keys junction --accountName wallet --accountPath $HOME/.tracks/junction-accounts/keys
+
+    go run cmd/main.go prover v1WASM
+
+    # 询问用户是否要继续执行
+    read -p "是否已经领水完毕要继续执行？(yes/no): " choice
+
+    if [[ "$choice" != "yes" ]]; then
+        echo "脚本已终止。"
+        exit 0
+    fi
+
+    # 如果用户选择继续，则执行以下操作
+    echo "继续执行脚本..."
+
+    CONFIG_PATH="$HOME/.tracks/config/sequencer.toml"
+    WALLET_PATH="$HOME/.tracks/junction-accounts/keys/wallet.wallet.json"
+
+    # 从配置文件中提取 nodeid
+    NODE_ID=$(grep 'node_id =' $CONFIG_PATH | awk -F'"' '{print $2}')
+
+    # 从钱包文件中提取 air 开头的钱包地址
+    AIR_ADDRESS=$(jq -r '.address' $WALLET_PATH)
+
+    # 获取本机 IP 地址
+    LOCAL_IP=$(hostname -I | awk '{print $1}')
+
+    # 定义其他参数
+    INFO="EVM Track"
+    BOOTSTRAP_NODE="/ip4/$LOCAL_IP/tcp/2300/p2p/$NODE_ID"
+
+    # 取消网络代理
+    unset http_proxy
+    unset https_proxy
 # 设置 gas 费用
 verifyPodFile="$HOME/tracks/junction/verifyPod.go"
 validateVRFFile="$HOME/tracks/junction/validateVRF.go"
@@ -194,52 +240,6 @@ else
 fi
 
 echo "设置gas完成"
-
-
-    # 执行 Go 命令，替换用户输入的值
-    go run cmd/main.go init \
-        --daRpc "disperser-holesky.eigenda.xyz" \
-        --daKey "$dakey" \
-        --daType "eigen" \
-        --moniker "$moniker" \
-        --stationRpc "http://127.0.0.1:26657" \
-        --stationAPI "http://127.0.0.1:1317" \
-        --stationType "wasm"
-
-    go run cmd/main.go keys junction --accountName wallet --accountPath $HOME/.tracks/junction-accounts/keys
-
-    go run cmd/main.go prover v1WASM
-
-    # 询问用户是否要继续执行
-    read -p "是否已经领水完毕要继续执行？(yes/no): " choice
-
-    if [[ "$choice" != "yes" ]]; then
-        echo "脚本已终止。"
-        exit 0
-    fi
-
-    # 如果用户选择继续，则执行以下操作
-    echo "继续执行脚本..."
-
-    CONFIG_PATH="$HOME/.tracks/config/sequencer.toml"
-    WALLET_PATH="$HOME/.tracks/junction-accounts/keys/wallet.wallet.json"
-
-    # 从配置文件中提取 nodeid
-    NODE_ID=$(grep 'node_id =' $CONFIG_PATH | awk -F'"' '{print $2}')
-
-    # 从钱包文件中提取 air 开头的钱包地址
-    AIR_ADDRESS=$(jq -r '.address' $WALLET_PATH)
-
-    # 获取本机 IP 地址
-    LOCAL_IP=$(hostname -I | awk '{print $1}')
-
-    # 定义其他参数
-    INFO="EVM Track"
-    BOOTSTRAP_NODE="/ip4/$LOCAL_IP/tcp/2300/p2p/$NODE_ID"
-
-    # 取消网络代理
-    unset http_proxy
-    unset https_proxy
 
     while true; do
         read -p "请输入 RPC 地址: " JSON_RPC
