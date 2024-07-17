@@ -442,9 +442,26 @@ function restart() {
 
 function setgas() {
     sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/verifyPod.go"
+    if grep -q 'gasFees := fmt.Sprintf("%damf", 5*gas)' "$HOME/tracks/junction/verifyPod.go"; then
+        echo "verifyPod.go 中的 gas 费用已成功设置为 5*gas"
+    else
+        echo "无法正确设置 verifyPod.go 中的 gas 费用"
+    fi
+
     sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/validateVRF.go"
+    if grep -q 'gasFees := fmt.Sprintf("%damf", 5*gas)' "$HOME/tracks/junction/validateVRF.go"; then
+        echo "validateVRF.go 中的 gas 费用已成功设置为 5*gas"
+    else
+        echo "无法正确设置 validateVRF.go 中的 gas 费用"
+    fi
+
     sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 10*gas)/' "$HOME/tracks/junction/submitPod.go"
-    echo "设置gas"
+    if grep -q 'gasFees := fmt.Sprintf("%damf", 10*gas)' "$HOME/tracks/junction/submitPod.go"; then
+        echo "submitPod.go 中的 gas 费用已成功设置为 10*gas"
+    else
+        echo "无法正确设置 submitPod.go 中的 gas 费用"
+    fi
+    echo "设置gas完成"
 }
 
 function export_mnemonic_and_address() {
