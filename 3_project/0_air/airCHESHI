@@ -362,7 +362,7 @@ function monitor_stationd_logs() {
                 sudo systemctl stop stationd
                 cd $HOME/tracks
                 go run cmd/main.go rollback
-                go run cmd/main.go rollback
+                go run cmd.main.go rollback
                 go run cmd/main.go rollback
                 sudo systemctl restart stationd
                 echo "$(date): 回滚并重启 stationd 服务，因为检测到 $ERROR_STRING_3 错误。" | tee -a "$LOG_FILE"
@@ -390,7 +390,6 @@ function monitor_stationd_logs() {
         sleep 1  # 监控间隔时间，以秒为单位
     done
 }
-
 
 # 删除节点
 function delete_node() {
@@ -448,14 +447,16 @@ function setgas() {
     echo "设置gas"
 }
 
-function export_mnemonic() {
+function export_mnemonic_and_address() {
     WALLET_PATH="$HOME/.tracks/junction-accounts/keys/wallet.wallet.json"
     if [ -f "$WALLET_PATH" ];then
-        echo "钱包文件存在，提取助记词..."
+        echo "钱包文件存在，提取助记词和地址..."
         MNEMONIC=$(jq -r '.mnemonic' "$WALLET_PATH")
+        AIR_ADDRESS=$(jq -r '.address' "$WALLET_PATH")
         echo "助记词：$MNEMONIC"
+        echo "地址：$AIR_ADDRESS"
     else
-        echo "钱包文件不存在，无法提取助记词。"
+        echo "钱包文件不存在，无法提取助记词和地址。"
     fi
 }
 
@@ -486,15 +487,14 @@ function main_menu() {
         echo "3. 查看 avail 状态"
         echo "4. 查看 tracks 状态"
         echo "5. 查看 stationd 状态"
-        echo "6. 导出所有私钥"
-        echo "7. 导出助记词"
-        echo "8. 停止脚本"
-        echo "9. 删除节点"
-        echo "10. 重启"
-        echo "11. 重启 stationd"
-        echo "12. 回滚 stationd"
-        echo "13. 更换 RPC 地址"
-        read -p "请输入选项（1-13）: " OPTION
+        echo "6. 导出助记词和地址"
+        echo "7. 停止脚本"
+        echo "8. 删除节点"
+        echo "9. 重启"
+        echo "10. 重启 stationd"
+        echo "11. 回滚 stationd"
+        echo "12. 更换 RPC 地址"
+        read -p "请输入选项（1-12）: " OPTION
 
         case $OPTION in
         1) install_node ;;
@@ -502,14 +502,13 @@ function main_menu() {
         3) avail_log ;;
         4) tracks_log ;;
         5) stationd_log ;;
-        6) private_key ;;
-        7) export_mnemonic ;;
-        8) sudo pkill -f spam.sh ;;
-        9) delete_node ;;
-        10) restart ;;
-        11) restart_stationd ;;
-        12) rollback_stationd ;;
-        13) switch_rpc ;;
+        6) export_mnemonic_and_address ;;
+        7) sudo pkill -f spam.sh ;;
+        8) delete_node ;;
+        9) restart ;;
+        10) restart_stationd ;;
+        11) rollback_stationd ;;
+        12) switch_rpc ;;
         *) echo "无效选项。" ;;
         esac
         echo "按任意键返回主菜单..."
