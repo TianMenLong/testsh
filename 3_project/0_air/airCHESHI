@@ -147,6 +147,49 @@ EOF
     read -p "请输入Public Key hex: " dakey
     read -p "请输入节点名: " moniker
 
+# 设置 gas 费用
+verifyPodFile="$HOME/tracks/junction/verifyPod.go"
+validateVRFFile="$HOME/tracks/junction/validateVRF.go"
+submitPodFile="$HOME/tracks/junction/submitPod.go"
+
+if [ -f "$verifyPodFile" ]; then
+    sed -i '/gasFees := fmt.Sprintf("%damf", /d' "$verifyPodFile"
+    echo 'gasFees := fmt.Sprintf("%damf", 5*gas)' >> "$verifyPodFile"
+    if grep -q 'gasFees := fmt.Sprintf("%damf", 5*gas)' "$verifyPodFile"; then
+        echo "verifyPod.go 中的 gas 费用已成功设置为 5*gas"
+    else
+        echo "无法正确设置 verifyPod.go 中的 gas 费用"
+    fi
+else
+    echo "文件 $verifyPodFile 不存在"
+fi
+
+if [ -f "$validateVRFFile" ]; then
+    sed -i '/gasFees := fmt.Sprintf("%damf", /d' "$validateVRFFile"
+    echo 'gasFees := fmt.Sprintf("%damf", 5*gas)' >> "$validateVRFFile"
+    if grep -q 'gasFees := fmt.Sprintf("%damf", 5*gas)' "$validateVRFFile"; then
+        echo "validateVRF.go 中的 gas 费用已成功设置为 5*gas"
+    else
+        echo "无法正确设置 validateVRF.go 中的 gas 费用"
+    fi
+else
+    echo "文件 $validateVRFFile 不存在"
+fi
+
+if [ -f "$submitPodFile" ]; then
+    sed -i '/gasFees := fmt.Sprintf("%damf", /d' "$submitPodFile"
+    echo 'gasFees := fmt.Sprintf("%damf", 10*gas)' >> "$submitPodFile"
+    if grep -q 'gasFees := fmt.Sprintf("%damf", 10*gas)' "$submitPodFile"; then
+        echo "submitPod.go 中的 gas 费用已成功设置为 10*gas"
+    else
+        echo "无法正确设置 submitPod.go 中的 gas 费用"
+    fi
+else
+    echo "文件 $submitPodFile 不存在"
+fi
+
+echo "设置gas完成"
+
     # 执行 Go 命令，替换用户输入的值
     go run cmd/main.go init \
         --daRpc "disperser-holesky.eigenda.xyz" \
@@ -195,49 +238,6 @@ EOF
     while true; do
         read -p "请输入 RPC 地址: " JSON_RPC
         echo "尝试使用 RPC 地址: $JSON_RPC"
-
-# 设置 gas 费用
-verifyPodFile="$HOME/tracks/junction/verifyPod.go"
-validateVRFFile="$HOME/tracks/junction/validateVRF.go"
-submitPodFile="$HOME/tracks/junction/submitPod.go"
-
-if [ -f "$verifyPodFile" ]; then
-    sed -i '/gasFees := fmt.Sprintf("%damf", /d' "$verifyPodFile"
-    echo 'gasFees := fmt.Sprintf("%damf", 5*gas)' >> "$verifyPodFile"
-    if grep -q 'gasFees := fmt.Sprintf("%damf", 5*gas)' "$verifyPodFile"; then
-        echo "verifyPod.go 中的 gas 费用已成功设置为 5*gas"
-    else
-        echo "无法正确设置 verifyPod.go 中的 gas 费用"
-    fi
-else
-    echo "文件 $verifyPodFile 不存在"
-fi
-
-if [ -f "$validateVRFFile" ]; then
-    sed -i '/gasFees := fmt.Sprintf("%damf", /d' "$validateVRFFile"
-    echo 'gasFees := fmt.Sprintf("%damf", 5*gas)' >> "$validateVRFFile"
-    if grep -q 'gasFees := fmt.Sprintf("%damf", 5*gas)' "$validateVRFFile"; then
-        echo "validateVRF.go 中的 gas 费用已成功设置为 5*gas"
-    else
-        echo "无法正确设置 validateVRF.go 中的 gas 费用"
-    fi
-else
-    echo "文件 $validateVRFFile 不存在"
-fi
-
-if [ -f "$submitPodFile" ]; then
-    sed -i '/gasFees := fmt.Sprintf("%damf", /d' "$submitPodFile"
-    echo 'gasFees := fmt.Sprintf("%damf", 10*gas)' >> "$submitPodFile"
-    if grep -q 'gasFees := fmt.Sprintf("%damf", 10*gas)' "$submitPodFile"; then
-        echo "submitPod.go 中的 gas 费用已成功设置为 10*gas"
-    else
-        echo "无法正确设置 submitPod.go 中的 gas 费用"
-    fi
-else
-    echo "文件 $submitPodFile 不存在"
-fi
-
-echo "设置gas完成"
 
         # 运行 tracks create-station 命令
         create_station_cmd="go run cmd/main.go create-station \
