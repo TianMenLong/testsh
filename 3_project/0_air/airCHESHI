@@ -62,53 +62,6 @@ function check_and_repair_db() {
     fi
 }
 
-# 增加调试日志功能
-function add_debug_logs() {
-    local logfile=$1
-    tail -f $logfile | while read -r line; do
-        echo "$line" >> /var/log/wasmstationd_debug.log
-    done
-}
-
-# 检查 VRF 配置和数据完整性
-function check_vrf_and_data() {
-    # 确认 VRF 配置文件是否正确
-    if [ ! -f "$HOME/.tracks/config/vrf.toml" ]; then
-        echo "VRF 配置文件不存在，请检查配置。"
-        exit 1
-    fi
-
-    # 确保所有必需的配置项都已正确设置
-    if ! grep -q "vrf_key" "$HOME/.tracks/config/vrf.toml"; then
-        echo "VRF 配置文件中缺少 vrf_key 项，请检查配置。"
-        exit 1
-    fi
-
-    # 确认生成 VRF 所需的所有输入数据是否完整并正确传递
-    if [ ! -f "$HOME/.tracks/data/vrf_input.json" ]; then
-        echo "VRF 输入数据文件不存在，请检查数据。"
-        exit 1
-    fi
-
-    echo "VRF 配置和数据完整性检查通过。"
-}
-
-# 设置 gas
-function setgas() {
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/verifyPod.go"
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/validateVRF.go"
-    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 10*gas)/' "$HOME/tracks/junction/submitPod.go"
-    echo "设置gas"
-    
-    # 调试信息：显示修改后的文件内容
-    echo "修改后的 verifyPod.go 文件内容:"
-    cat "$HOME/tracks/junction/verifyPod.go" | grep gasFees
-    echo "修改后的 validateVRF.go 文件内容:"
-    cat "$HOME/tracks/junction/validateVRF.go" | grep gasFees
-    echo "修改后的 submitPod.go 文件内容:"
-    cat "$HOME/tracks/junction/submitPod.go" | grep gasFees
-}
-
 # 安装节点
 function install_node() {
     sudo apt-get update && sudo apt-get install jq build-essential -y
@@ -127,7 +80,7 @@ function install_node() {
     if [ ! -d "$HOME/tracks" ]; then
         while true; do
             git clone https://github.com/airchains-network/tracks.git
-            if [ $? -eq 0 ];then
+            if [ $? -eq 0 ]; then
                 echo "tracks 仓库克隆成功。"
                 break
             else
@@ -190,15 +143,6 @@ EOF
     fi
     go mod tidy
 
-    # 设置 gas
-    setgas
-
-    # 重新编译代码
-    go build -o tracks cmd/main.go
-
-    # 重新启动服务
-    sudo systemctl restart wasmstationd
-
     # 提示用户输入公钥和节点名
     read -p "请输入Public Key hex: " dakey
     read -p "请输入节点名: " moniker
@@ -220,7 +164,7 @@ EOF
     # 询问用户是否要继续执行
     read -p "是否已经领水完毕要继续执行？(yes/no): " choice
 
-    if [[ "$choice" != "yes" ]];then
+    if [[ "$choice" != "yes" ]]; then
         echo "脚本已终止。"
         exit 0
     fi
@@ -315,14 +259,14 @@ EOF
     # 确保脚本有执行权限
     chmod +x spam.sh
 
-    # 后台运行刷TX脚脚
+    # 后台运行刷TX脚本
     nohup bash spam.sh > spam.log 2>&1 &
 }
 
 # 新增的stationd服务配置和启动部分
 function setup_stationd_service() {
     # 检查工作目录是否存在，不存在则创建
-    if [ ! -d "$HOME/tracks" ];then
+    if [ ! -d "$HOME/tracks" ]; then
         mkdir -p $HOME/tracks
     fi
 
@@ -389,7 +333,7 @@ function monitor_stationd_logs() {
         if echo "$line" | grep -q "$ERROR_STRING_1"; then
             echo "检测到错误字符串 $ERROR_STRING_1" | tee -a "$ERROR_LOG_FILE"
             block_count=$((block_count + 1))
-            if [ "$block_count" -ge 25 ] && [ $((current_time - last_restart_time)) -gt $restart_interval]; then
+            if [ "$block_count" -ge 25 ] && [ $((current_time - last_restart_time)) -gt $restart_interval ]; then
                 echo "检测到连续25条 $ERROR_STRING_1 日志，重启 stationd 服务..." | tee -a "$ERROR_LOG_FILE"
                 sudo systemctl restart stationd
                 echo "$(date): 重启 stationd 服务，因为检测到连续25条 $ERROR_STRING_1 日志。" | tee -a "$LOG_FILE"
@@ -437,13 +381,13 @@ function monitor_stationd_logs() {
         if echo "$line" | grep -q "$ERROR_STRING_4"; then
             echo "检测到错误关键词 $ERROR_STRING_4 ，重新启动 stationd 服务..." | tee -a "$ERROR_LOG_FILE"
             sudo systemctl restart stationd
-            echo "$(date): 重启 stationd 服务，因为检测到 $ERROR_STRING_4 错误。" | tee "$LOG_FILE"
+            echo "$(date): 重启 stationd 服务，因为检测到 $ERROR_STRING_4 错误。" | tee -a "$LOG_FILE"
         fi
 
         if echo "$line" | grep -q "$ERROR_STRING_5"; then
             echo "检测到错误字符串 $ERROR_STRING_5" | tee -a "$ERROR_LOG_FILE"
             sudo systemctl restart stationd
-            echo "$(date): 重启 stationd 服务，因为检测到 $ERROR_STRING_5 错误。" | tee "$LOG_FILE"
+            echo "$(date): 重启 stationd 服务，因为检测到 $ERROR_STRING_5 错误。" | tee -a "$LOG_FILE"
         fi
 
         # 检查并修复数据库文件
@@ -500,6 +444,13 @@ function restart() {
     echo "重启availd"
     sudo systemctl restart tracksd
     echo "重启tracksd"
+}
+
+function setgas() {
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/verifyPod.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 5*gas)/' "$HOME/tracks/junction/validateVRF.go"
+    sed -i 's/gasFees := fmt.Sprintf("%damf", gas)/gasFees := fmt.Sprintf("%damf", 10*gas)/' "$HOME/tracks/junction/submitPod.go"
+    echo "设置gas"
 }
 
 function export_mnemonic() {
